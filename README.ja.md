@@ -12,7 +12,7 @@
 2. **小さく直す。** 失敗した検査、期待した結果、実際の結果を Codex や Claude Code に渡します。直す範囲を絞れたら、まず Low を使います。
 3. **同じ検査で確かめる。** 異常例が直り、正常例も保たれたことを見ます。原因を絞れず次の修正が推測になるなら、証拠を残して止まります。
 
-実案件の写しでは、会話の開始前に送った発言が落ちる不具合を再現し、GPT‑6.2 Sol が Low の1ターンで修正しました。独立した再検査で、落ちていた発言が戻り、正常な発言の扱いも保たれました。この試験での Sonnet の成績と、固定 High との所要時間・トークン・費用の差は未測定です。
+実案件の写しで、GPT‑6.1 Terra に同じ証拠を渡し、固定 Low と固定 High でそれぞれ1回試しました。両方とも狙った不具合を直し、正常例を維持しました。Low は45秒・出力1,677トークン、High は67秒・2,694トークンでした。広い検査は共に10/15件で、同じ5件が残りました。[比較の条件と結果](docs/implementation-evaluation.md)
 
 ## 自分のプロジェクトで確かめる
 
@@ -24,11 +24,17 @@ npm run check:node -- --cwd /path/to/project --check-id regression --id before t
 
 結果と、失敗したアサーションの場所が出ます。終了値は合格が `0`、アサーション失敗が `1`、未確認が `2` です。修正後は同じファイル・検査IDで `--id after --resolves before` を付けて実行します。モデルや API キーは不要です。台本から使う場合は `npm run --silent check:node -- --json` に検査の引数を足し、返る `observation` を `RunContext` に渡せます。
 
+pytest を使う場合は、pytest が入っている Python を指定します。テスト本体のアサーション失敗は証拠付きで返し、テストの収集や準備で止まった場合は未確認にします。
+
+```sh
+npm run check:pytest -- --cwd /path/to/project --python /path/to/venv/bin/python --check-id regression --id before tests/test_regression.py
+```
+
 ## 独立検査を持ち寄る
 
 pytest、Vitest、TypeScript、Cargo、スキーマ検証などで使っている検査を募集します。失敗する最小例、通る再検査、試験結果を確定できない例を添えて、[検査の提案 Issue](https://github.com/onoderakosen89/reasoning-effort-controller/issues/new?template=check-adapter.yml) に出せます。動くアダプタがある場合は、同じ例を試験にして PR にできます。[参加ガイド](CONTRIBUTING.md)
 
-現在同梱しているのは Node.js の検査アダプタです。
+Node.js と pytest の検査アダプタを同梱しています。
 
 ## 任意のエフォート切り替え
 
@@ -79,7 +85,7 @@ npm start -- --upstream http://127.0.0.1:8317 --model YOUR_MODEL_ID --port 8318
 
 `src/checkers/node-test.mjs` の `runNodeTestCheck` にテストファイルと検査IDを渡すと、`RunContext` に渡せる結果を返します。アサーションの失敗は Node.js の構造化イベントで判定します。試験を実行できない場合や理由を分類できない場合は不明として扱います。再検査では同じファイルと検査IDを使い、元の失敗IDを `resolves` に渡します。[接続例](README.md#bundled-nodejs-check)
 
-対象はローカルの信頼できる呼び出し元です。検査、仕事の停止、結果の報告は呼び出し元の役目です。状態はメモリにあり、上流への二重実行を防ぐ機能はありません。実モデルの品質、所要時間、トークン節約は未測定です。
+対象はローカルの信頼できる呼び出し元です。検査、仕事の停止、結果の報告は呼び出し元の役目です。状態はメモリにあり、上流の実行回数は呼び出し元が管理します。
 
 ```sh
 npm test

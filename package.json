@@ -10,7 +10,9 @@
   "scripts": {
     "start": "node src/cli.mjs",
     "check:node": "node src/check-cli.mjs",
+    "check:pytest": "node src/check-cli.mjs --runner pytest",
     "test": "node test/unit.test.mjs && node test/checkers.test.mjs",
+    "test:pytest": "node test/pytest-checker.test.mjs",
     "test:integration": "node test/integration.test.mjs",
     "demo": "node examples/low-high-low.mjs",
     "demo:codex": "node examples/codex-app-server.mjs",

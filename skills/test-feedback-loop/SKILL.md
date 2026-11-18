@@ -11,6 +11,8 @@ Use Node.js 26.10.0. From a checkout of [the controller](https://github.com/onod
 
 ```sh
 npm run check:node -- --cwd /path/to/project --check-id regression --id before path/to/regression.test.mjs
+# For an existing pytest suite, use the project's interpreter.
+npm run check:pytest -- --cwd /path/to/project --python /path/to/venv/bin/python --check-id regression --id before tests/test_regression.py
 ```
 
 - Exit 1 means a confirmed assertion failure. Give the repair agent the test name, location, expectation, and observed result. Start with low effort when the repair is well scoped.

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { runNodeTestCheck } from './checkers/node-test.mjs';
+import { runPytestCheck } from './checkers/pytest.mjs';
 import { validateContext } from './context.mjs';
 
 try {
@@ -9,7 +10,9 @@ try {
     allowPositionals: true,
     options: {
       cwd: { type: 'string', default: process.env.INIT_CWD || process.cwd() },
-      'check-id': { type: 'string', default: 'node-tests' },
+      runner: { type: 'string', default: 'node' },
+      python: { type: 'string', default: 'python3' },
+      'check-id': { type: 'string' },
       id: { type: 'string', default: randomUUID() },
       resolves: { type: 'string' },
       json: { type: 'boolean' },
@@ -17,10 +20,13 @@ try {
     },
   });
   if (values.help) {
-    console.log('npm run check:node -- [--cwd DIR] [--check-id ID] [--id ID] [--resolves FAILURE_ID] [--json] TEST_FILE ...');
+    console.log('npm run check:node|check:pytest -- [--cwd DIR] [--check-id ID] [--id ID] [--resolves FAILURE_ID] [--json] TEST_FILE ...');
+    console.log('For pytest, select the interpreter with --python BIN.');
   } else {
     const { cwd, id, resolves } = values;
-    const checkId = values['check-id'];
+    const runner = { node: runNodeTestCheck, pytest: runPytestCheck }[values.runner];
+    if (!['node', 'pytest'].includes(values.runner)) throw new TypeError('Choose node or pytest');
+    const checkId = values['check-id'] ?? `${values.runner}-tests`;
     // Fail fast on invalid IDs before running project code.
     validateContext({
       v: 1, run_id: 'cli', call_id: 'check', seq: 1,
@@ -28,7 +34,7 @@ try {
     });
     const evidence = [];
     const files = positionals.map(file => resolve(cwd, file));
-    const observation = await runNodeTestCheck({ files, cwd: resolve(cwd), checkId, id, resolves,
+    const observation = await runner({ files, cwd: resolve(cwd), python: values.python, checkId, id, resolves,
       onFailure: failure => evidence.push(failure) });
     if (values.json) {
       console.log(JSON.stringify({ observation, evidence }));

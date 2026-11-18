@@ -12,7 +12,7 @@ Once planning, design, and coordination have established the task, give the impl
 2. **Make one bounded change.** Give Codex or Claude Code the failed check, what you expected, and what happened. Low effort is a starting point for a repair this well scoped.
 3. **Verify.** Rerun the same check and the normal case. If the result stays inconclusive or the next repair would be guesswork, keep the evidence and stop to review the cause.
 
-In one historical regression trial, a message was dropped before a conversation opened. GPT-6.2 Sol repaired the failure in one low-effort turn after receiving the reproduction. The original test and the normal comparison both passed on recheck. Sonnet's performance on that trial and the time, token, and cost differences versus fixed high effort remain unmeasured.
+On a historical message-delivery bug, GPT-6.1 Terra repaired the targeted failure and preserved the normal case at both fixed Low and High. Low took 45 seconds and 1,677 output tokens. High took 67 seconds and 2,694 output tokens. Both left the same five broader checks unresolved. [Evaluation and limits](docs/implementation-evaluation.md)
 
 ## Check your own project
 
@@ -32,11 +32,19 @@ The output leads with the check result, followed by the failing assertion and it
 
 For machine-readable output, run `npm run --silent check:node -- --json` with your test arguments. Pass `observation` to `RunContext` and keep `evidence` for the repair agent. The check command makes no model calls.
 
+For a Python project, use an interpreter with pytest installed:
+
+```sh
+npm run check:pytest -- --cwd /path/to/project --python /path/to/venv/bin/python --check-id regression --id before tests/test_regression.py
+```
+
+An assertion failure in the test body produces evidence. Collection and setup failures produce an unknown result.
+
 ## Share an independent check
 
 Have a useful pytest, Vitest, TypeScript, Cargo, schema, or other check? Open a [check proposal](https://github.com/onoderakosen89/reasoning-effort-controller/issues/new?template=check-adapter.yml) with a small failing example, a passing recheck, and a case where the runner could not determine the result. Proposals are welcome before implementation. If you have a working adapter, open a pull request with those examples as tests. [Contribution guide](CONTRIBUTING.md)
 
-The bundled checker currently supports Node.js tests.
+Bundled checkers support Node.js tests and pytest.
 
 ## Optional effort switching
 
@@ -143,7 +151,7 @@ For a recheck, use the same files and check ID, a new observation ID, and `resol
 - Loopback deployment for trusted callers. The context header carries control data and is not an authentication mechanism.
 - In-memory decisions. HTTP retries still reach the upstream, and a restart starts a new run.
 - The caller runs the checks and owns task success, escalation, or approval. The controller changes reasoning effort and logs its decisions.
-- The demo and integration suite use mock models. Live model quality, latency, and token savings have not been measured here.
+- The HTTP demo and integration suite use mock models. See the [implementation evaluation](docs/implementation-evaluation.md) for a separate model trial.
 
 ```sh
 npm test
