@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node src/cli.mjs",
-    "test": "node test/unit.test.mjs",
+    "test": "node test/unit.test.mjs && node test/checkers.test.mjs",
     "test:integration": "node test/integration.test.mjs",
     "demo": "node examples/low-high-low.mjs"
   },

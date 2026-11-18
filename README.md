@@ -1,6 +1,8 @@
 # Reasoning Effort Controller
 
-A local HTTP proxy that changes the reasoning effort of the next request to a fixed model when a trusted caller supplies a check result.
+**Catch a broken change before spending another turn guessing.**
+
+A local HTTP proxy that adjusts the next request's reasoning effort from independent check results. Use your base effort for routine work, switch when a check confirms a failure, and return to base when the same check passes.
 
 [日本語](README.ja.md) · [Wire specification (Japanese)](SPEC.md)
 
@@ -18,7 +20,7 @@ Verified failure: high
 Matching check passed: low
 ```
 
-The caller supplies the three example outcomes. The mock upstream reports the effort that actually arrived.
+The demo runs a real Node.js assertion against a temporary implementation, changes the implementation, and runs the same assertion again. The mock upstream reports the effort it received after each check.
 
 ## How it works
 
@@ -27,6 +29,16 @@ The caller supplies the three example outcomes. The mock upstream reports the ef
 3. When the same check passes, the caller references the original failure. Effort returns to the base level after all outstanding failures have been resolved.
 
 Permission, approval, quota, and transport failures do not raise effort. The controller treats requests without valid context as passthrough. It leaves the contents of model messages, tools, and unrelated request fields intact.
+
+```mermaid
+flowchart LR
+    Base["Base effort"] --> Check["Run an independent check"]
+    Check -->|Verified failure| Retry["Failure effort"]
+    Retry --> Recheck["Run the same check"]
+    Recheck -->|Pass| Base
+    Check -->|Inconclusive| Keep["Keep current effort"]
+    Recheck -->|Still unresolved| Retry
+```
 
 ## Connect a caller
 
@@ -61,6 +73,20 @@ const recheckHeaders = run.next([
 ```
 
 Send these on successive logical calls, alongside your normal request headers. Link an observation to the call that follows the check. On an HTTP retry, reuse that call's exact headers and body. Use a separate run for unrelated work and keep calls within each run in order. Give capability probes and other auxiliary requests their own context or send them without the control header.
+
+### Bundled Node.js check
+
+Use `runNodeTestCheck` after an edit to run an explicit set of trusted test files:
+
+```js
+import { runNodeTestCheck } from './src/checkers/node-test.mjs';
+
+const check = { files: ['./test/regression.test.mjs'], checkId: 'regression' };
+const observation = await runNodeTestCheck({ ...check, id: 'check-1' });
+const nextHeaders = run.next([observation]);
+```
+
+For a recheck, use the same files and check ID, a new observation ID, and `resolves` set to the original failure ID. The adapter classifies assertion failures from structured runner events. An incomplete run or an unclassified error does not change the effort state.
 
 ## Scope
 
