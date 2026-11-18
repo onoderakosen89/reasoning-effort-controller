@@ -1,6 +1,6 @@
 ---
 name: test-feedback-loop
-description: Speed up the Check step in AI-assisted development. Use for a Codex or Claude Code repair that needs a fast, repeatable regression check, concrete failure evidence, and an independent recheck.
+description: Run fast independent checks for bounded implementation work. Use when handing a Codex or Claude Code repair to a smaller or low-effort model with concrete failure evidence and a repeatable recheck.
 ---
 
 # Test Feedback Loop

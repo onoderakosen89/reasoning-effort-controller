@@ -1,8 +1,8 @@
 # Test Feedback Loop
 
-**Build quickly with AI by shortening the time from a broken change to a useful test result.**
+**Make implementation faster and cheaper with fewer tokens and a Sonnet-class model.**
 
-This project grew out of a practical question from someone who started without a programming background: how can you build reliable software with AI without spending most of your time and tokens on retries? The method focuses on the Check in Plan–Do–Check–Act. Give the coding agent a small, repeatable failure, let it make a targeted change at low reasoning effort, and independently rerun the failing case and a normal control.
+Once planning, design, and coordination have established the task, give the implementation agent a narrow, repeatable failure and the expected behavior. A short Check loop in Plan–Do–Check–Act gives a smaller model or a low-effort turn a concrete change to make. Independently rerun the failing case and a normal control to verify the result.
 
 [日本語](README.ja.md) · [Agent Skill](skills/test-feedback-loop/SKILL.md)
 
@@ -12,7 +12,7 @@ This project grew out of a practical question from someone who started without a
 2. **Make one bounded change.** Give Codex or Claude Code the failed check, what you expected, and what happened. Low effort is a starting point for a repair this well scoped.
 3. **Verify.** Rerun the same check and the normal case. If the result stays inconclusive or the next repair would be guesswork, keep the evidence and stop to review the cause.
 
-In one historical regression trial, a message was dropped before a conversation opened. Codex repaired the failure in one low-effort turn after receiving the reproduction. The original test and the normal comparison both passed on recheck. That trial shows how the workflow can work. The time and token savings compared with a fixed higher effort are still unmeasured.
+In one historical regression trial, a message was dropped before a conversation opened. GPT-6.2 Sol repaired the failure in one low-effort turn after receiving the reproduction. The original test and the normal comparison both passed on recheck. Sonnet's performance on that trial and the time, token, and cost differences versus fixed high effort remain unmeasured.
 
 ## Check your own project
 

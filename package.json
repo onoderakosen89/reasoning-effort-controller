@@ -16,5 +16,5 @@
     "demo:codex": "node examples/codex-app-server.mjs",
     "demo:claude": "node examples/claude-code.mjs"
   },
-  "description": "Fast independent regression checks and repeatable repair verification for AI-assisted development."
+  "description": "Fast independent checks for low-effort AI implementation and repeatable repair verification."
 }
