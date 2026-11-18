@@ -1,0 +1,23 @@
+name: Propose an independent check
+description: Share a test runner, compiler, schema validator, or other independent check
+title: "[Check] "
+body:
+  - type: input
+    id: tool
+    attributes:
+      label: Runner or tool
+      description: Include the version and command if known.
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: Reproducible examples
+      description: Show a confirmed failure and the same check passing after a repair.
+    validations:
+      required: true
+  - type: textarea
+    id: inconclusive
+    attributes:
+      label: When the result is unknown
+      description: How does the runner report that it could not complete or that the result is ambiguous?

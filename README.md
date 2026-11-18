@@ -1,10 +1,34 @@
-# Reasoning Effort Controller
+# Test Feedback Loop
 
 **Catch a broken change before spending another turn guessing.**
 
-A local HTTP proxy that adjusts the next request's reasoning effort from independent check results. Use your base effort for routine work, switch when a check confirms a failure, and return to base when the same check passes.
+Run an independent test before the next repair turn. Give Codex or Claude Code evidence of what broke, then rerun the same check to verify the fix. Use a native agent session or the local HTTP controller to change reasoning effort when the evidence calls for it.
 
-[日本語](README.ja.md) · [Wire specification (Japanese)](SPEC.md)
+[日本語](README.ja.md) · [Agent Skill](skills/test-feedback-loop/SKILL.md) · [Wire specification (Japanese)](SPEC.md)
+
+## Check your own project
+
+Use Node.js 26.10.0 and point the command at a trusted Node.js test file:
+
+```sh
+npm run check:node -- --cwd /path/to/project --check-id regression --id before test/regression.test.mjs
+```
+
+The output leads with the check result, followed by the failing assertion and its location if available. After a repair, use the same files and check ID, plus `--id after --resolves before`.
+
+| Exit code | Meaning |
+| --- | --- |
+| 0 | The check passed |
+| 1 | An assertion failure was confirmed |
+| 2 | The check was inconclusive or could not run |
+
+For machine-readable output, run `npm run --silent check:node -- --json` with your test arguments. Pass `observation` to `RunContext` and keep `evidence` for the repair agent. The check command makes no model calls.
+
+## Share an independent check
+
+Have a useful pytest, Vitest, TypeScript, Cargo, schema, or other check? Open a [check proposal](https://github.com/onoderakosen89/reasoning-effort-controller/issues/new?template=check-adapter.yml) with a small failing example, a passing recheck, and a case where the runner could not determine the result. Proposals are welcome before implementation. If you have a working adapter, open a pull request with those examples as tests. [Contribution guide](CONTRIBUTING.md)
+
+The bundled checker currently supports Node.js tests.
 
 ## Run the demo
 

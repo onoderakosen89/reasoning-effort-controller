@@ -1,10 +1,26 @@
-# Reasoning Effort Controller
+# Test Feedback Loop
 
 **壊れた箇所に早く気づき、次の実装に進む。**
 
-独立した検査の結果を受け、固定モデルへの次の API 呼び出しで推論エフォートを切り替えるローカル HTTP プロキシです。普段は通常時のエフォートで進め、検査で失敗を確認した時に切り替え、同じ検査が通ったら元に戻します。
+独立したテストで壊れた変更を見つけ、証拠を Codex や Claude Code の次の修正に渡します。修正後は同じテストで確認します。エフォートの切り替えには、エージェントの既存の入口か、同梱の HTTP プロキシを使えます。
 
-[English](README.md) · [通信仕様](SPEC.md)
+[English](README.md) · [Agent Skill](skills/test-feedback-loop/SKILL.md) · [通信仕様](SPEC.md)
+
+## 自分のプロジェクトで確かめる
+
+Node.js 26.10.0 で、信頼できるテストファイルを指定します。
+
+```sh
+npm run check:node -- --cwd /path/to/project --check-id regression --id before test/regression.test.mjs
+```
+
+結果と、失敗したアサーションの場所が出ます。終了値は合格が `0`、アサーション失敗が `1`、未確認が `2` です。修正後は同じファイル・検査IDで `--id after --resolves before` を付けて実行します。モデルや API キーは不要です。台本から使う場合は `npm run --silent check:node -- --json` に検査の引数を足し、返る `observation` を `RunContext` に渡せます。
+
+## 独立検査を持ち寄る
+
+pytest、Vitest、TypeScript、Cargo、スキーマ検証などで使っている検査を募集します。失敗する最小例、通る再検査、試験結果を確定できない例を添えて、[検査の提案 Issue](https://github.com/onoderakosen89/reasoning-effort-controller/issues/new?template=check-adapter.yml) に出せます。動くアダプタがある場合は、同じ例を試験にして PR にできます。[参加ガイド](CONTRIBUTING.md)
+
+現在同梱しているのは Node.js の検査アダプタです。
 
 ## 試す
 

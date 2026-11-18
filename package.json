@@ -3,16 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "keywords": ["ai-coding", "codex", "claude-code", "regression-testing", "test-feedback", "reasoning-effort"],
   "engines": {
     "node": "26.10.0"
   },
   "scripts": {
     "start": "node src/cli.mjs",
+    "check:node": "node src/check-cli.mjs",
     "test": "node test/unit.test.mjs && node test/checkers.test.mjs",
     "test:integration": "node test/integration.test.mjs",
     "demo": "node examples/low-high-low.mjs",
     "demo:codex": "node examples/codex-app-server.mjs",
     "demo:claude": "node examples/claude-code.mjs"
   },
-  "description": "A local HTTP proxy that adjusts model reasoning effort from verified check results."
+  "description": "Independent regression checks and check-driven reasoning effort for Codex and Claude Code."
 }
