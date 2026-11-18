@@ -1,0 +1,16 @@
+{
+  "name": "reasoning-effort-controller",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "26.10.0"
+  },
+  "scripts": {
+    "start": "node src/cli.mjs",
+    "test": "node test/unit.test.mjs",
+    "test:integration": "node test/integration.test.mjs",
+    "demo": "node examples/low-high-low.mjs"
+  },
+  "description": "A local HTTP proxy that adjusts model reasoning effort from verified check results."
+}
