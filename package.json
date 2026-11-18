@@ -10,7 +10,8 @@
     "start": "node src/cli.mjs",
     "test": "node test/unit.test.mjs && node test/checkers.test.mjs",
     "test:integration": "node test/integration.test.mjs",
-    "demo": "node examples/low-high-low.mjs"
+    "demo": "node examples/low-high-low.mjs",
+    "demo:codex": "node examples/codex-app-server.mjs"
   },
   "description": "A local HTTP proxy that adjusts model reasoning effort from verified check results."
 }
