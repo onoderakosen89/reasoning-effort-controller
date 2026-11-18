@@ -4,7 +4,27 @@
 
 対象は、計画・設計・指揮が済んだあとに手を動かす実装工程です。PDCA の **C（検査）を短く回し**、壊れた箇所と期待する挙動を渡せば、実装役が調べ直す範囲を絞れます。小さめのモデルや Low で修正し、同じ検査で品質を確かめるための道具です。
 
-[English](README.md) · [Agent Skill](skills/test-feedback-loop/SKILL.md)
+[English](README.md) · [简体中文](README.zh-CN.md) · [Agent Skill](skills/test-feedback-loop/SKILL.md)
+
+## 修正から再検査まで試す
+
+Node.js 26.10.0 を使います。次の2つのデモは、モデルのアカウントや API キーなしで動きます。
+
+```sh
+git clone https://github.com/onoderakosen89/test-feedback-loop.git
+cd test-feedback-loop
+npm run --silent demo:repair
+```
+
+失敗を再現し、台本の修正役に証拠を渡して、同じ異常例と正常例を再検査します。修正が2回とも外れる場合は、次のデモで確認できます。
+
+```sh
+npm run --silent demo:repair -- --show-stop
+```
+
+終了値は `1` で、2回の経過、最後の差分、失敗の証拠、見直す前提が `consultation` にまとまります。検査が未確認なら終了値は `2` です。相談の表示や配送は呼び出し元で行えます。
+
+`npm run --silent demo:repair -- --chatgpt` では、ChatGPT にサインインした Codex が、使い捨ての試料を固定 Low で直します。修正がもう一度必要なら、同じセッションに新しい検査結果だけを足します。Codex が返した場合はキャッシュ済み入力トークンも表示します。[呼び出し元向けの関数](src/repair-loop.mjs)
 
 ## 検査から始める作り方
 
@@ -21,22 +41,9 @@
 
 入力トークン、キャッシュ分、取りこぼした検査も比較結果に載せています。[比較の条件と結果](docs/implementation-evaluation.md)
 
-## 修正から再検査まで試す
-
-このリポジトリを取得し、Node.js 26.10.0 で実行します。
-
-```sh
-npm run --silent demo:repair
-npm run --silent demo:repair -- --show-stop
-```
-
-1つ目は失敗を再現し、台本の修正役に証拠を渡して、同じ異常例と正常例を再検査します。2つ目は修正が2回とも外れる例です。終了値は `1` で、2回の経過、最後の差分、失敗の証拠、見直す前提が `consultation` にまとまります。検査が未確認なら終了値は `2` です。相談の表示や配送は呼び出し元で行えます。
-
-`npm run --silent demo:repair -- --chatgpt` では、ChatGPT にサインインした Codex が、使い捨ての試料を固定 Low で直します。修正がもう一度必要なら、同じセッションに新しい検査結果だけを足します。Codex が返した場合はキャッシュ済み入力トークンも表示します。[呼び出し元向けの関数](src/repair-loop.mjs)
-
 ## 自分のプロジェクトで確かめる
 
-Node.js 26.10.0 で、信頼できるテストファイルを指定します。
+既存のテストに対して検査コマンドをそのまま使えます。失敗を修正役へ自動で渡す場合は、呼び出し側を [runRepairLoop](src/repair-loop.mjs) につなぎます。検査には信頼できるテストファイルを指定してください。
 
 ```sh
 npm run check:node -- --cwd /path/to/project --check-id regression --id before test/regression.test.mjs
@@ -52,7 +59,7 @@ npm run check:pytest -- --cwd /path/to/project --python /path/to/venv/bin/python
 
 ## 独立検査を持ち寄る
 
-pytest、Vitest、TypeScript、Cargo、スキーマ検証などで使っている検査を募集します。失敗する最小例、通る再検査、試験結果を確定できない例を添えて、[検査の提案 Issue](https://github.com/onoderakosen89/reasoning-effort-controller/issues/new?template=check-adapter.yml) に出せます。動くアダプタがある場合は、同じ例を試験にして PR にできます。[参加ガイド](CONTRIBUTING.md)
+pytest、Vitest、TypeScript、Cargo、スキーマ検証などで使っている検査を募集します。失敗する最小例、通る再検査、試験結果を確定できない例を添えて、[検査の提案 Issue](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=check-adapter.yml) に出せます。動くアダプタがある場合は、同じ例を試験にして PR にできます。[参加ガイド](CONTRIBUTING.md)
 
 Node.js と pytest の検査アダプタを同梱しています。
 

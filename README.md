@@ -4,7 +4,27 @@
 
 Once planning, design, and coordination have established the task, give the implementation agent a narrow, repeatable failure and the expected behavior. A short Check loop in Plan–Do–Check–Act gives a smaller model or a low-effort turn a concrete change to make. Independently rerun the failing case and a normal control to verify the result.
 
-[日本語](README.ja.md) · [Agent Skill](skills/test-feedback-loop/SKILL.md)
+[日本語](README.ja.md) · [简体中文](README.zh-CN.md) · [Agent Skill](skills/test-feedback-loop/SKILL.md)
+
+## Try the complete repair loop
+
+Use Node.js 26.10.0. Both demos run without a model account or API key.
+
+```sh
+git clone https://github.com/onoderakosen89/test-feedback-loop.git
+cd test-feedback-loop
+npm run --silent demo:repair
+```
+
+The demo reproduces a failure, hands the assertion evidence to a scripted repair, and independently reruns the regression and its normal control. To see what happens when two repairs fail, run:
+
+```sh
+npm run --silent demo:repair -- --show-stop
+```
+
+This exits with code 1 and returns a `consultation` object with both attempts, the final difference, the latest evidence, and the premise to check. An inconclusive run exits with code 2. The caller can display or route the consultation.
+
+Run `npm run --silent demo:repair -- --chatgpt` to have Codex apply the fix at fixed Low using your ChatGPT sign-in. The demo uses a disposable checkout-free fixture. A follow-up appends only the new check result to the same Codex session. Reported usage includes cached input when Codex supplies it. The caller API is [runRepairLoop](src/repair-loop.mjs).
 
 ## The workflow
 
@@ -21,22 +41,9 @@ In one trial of a historical message-delivery bug, GPT-6.1 Terra and GPT-6.2 Sol
 
 The trial measured time and token use. See the [full results and limits](docs/implementation-evaluation.md) for input and cached tokens and the checks that stayed unresolved.
 
-## Try the complete repair loop
-
-From a checkout of this repository, use Node.js 26.10.0:
-
-```sh
-npm run --silent demo:repair
-npm run --silent demo:repair -- --show-stop
-```
-
-The first command reproduces a failure, hands the assertion evidence to a scripted repair, and independently reruns the regression and its normal control. The second simulates two unsuccessful repairs, exits with code 1, and returns a `consultation` object with both attempts, the final difference, the latest evidence, and the premise to check. An inconclusive run exits with code 2. The caller can display or route the consultation.
-
-Run `npm run --silent demo:repair -- --chatgpt` to have Codex apply the fix at fixed Low using your ChatGPT sign-in. The demo uses a disposable checkout-free fixture. A follow-up appends only the new check result to the same Codex session. Reported usage includes cached input when Codex supplies it. The caller API is [runRepairLoop](src/repair-loop.mjs).
-
 ## Check your own project
 
-Use Node.js 26.10.0 and point the command at a trusted Node.js test file:
+Run the check command directly on your own tests. To hand failures to a repair agent automatically, connect your caller to [runRepairLoop](src/repair-loop.mjs). Point the check at a trusted Node.js test file:
 
 ```sh
 npm run check:node -- --cwd /path/to/project --check-id regression --id before test/regression.test.mjs
@@ -62,7 +69,7 @@ An assertion failure in the test body produces evidence. Collection and setup fa
 
 ## Share an independent check
 
-Have a useful pytest, Vitest, TypeScript, Cargo, schema, or other check? Open a [check proposal](https://github.com/onoderakosen89/reasoning-effort-controller/issues/new?template=check-adapter.yml) with a small failing example, a passing recheck, and a case where the runner could not determine the result. Proposals are welcome before implementation. If you have a working adapter, open a pull request with those examples as tests. [Contribution guide](CONTRIBUTING.md)
+Have a useful pytest, Vitest, TypeScript, Cargo, schema, or other check? Open a [check proposal](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=check-adapter.yml) with a small failing example, a passing recheck, and a case where the runner could not determine the result. Proposals are welcome before implementation. If you have a working adapter, open a pull request with those examples as tests. [Contribution guide](CONTRIBUTING.md)
 
 Bundled checkers support Node.js tests and pytest.
 
