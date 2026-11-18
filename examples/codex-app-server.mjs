@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { parseArgs } from 'node:util';
 import { RunContext } from '../src/adapter.mjs';
-import { runNodeTestCheck } from '../src/checkers/node-test.mjs';
+import { runRegressionCycle } from './regression-cycle.mjs';
 import { CONTEXT_HEADER, decodeContext } from '../src/context.mjs';
 import { Policy } from '../src/policy.mjs';
 import { close, listen, readBody } from '../test/http-fixture.mjs';
@@ -124,22 +124,7 @@ try {
     console.log(`${label}: ${decision.effort}`);
   }
 
-  const implementation = join(workspace, 'answer.mjs');
-  const testFile = join(workspace, 'regression.test.mjs');
-  await writeFile(testFile, `
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { answer } from './answer.mjs';
-test('answer returns 42', () => assert.equal(answer(), 42));
-`);
-  const check = { files: [testFile], checkId: 'regression' };
-  await turn('Initial turn', [], 'low');
-  await writeFile(implementation, 'export const answer = () => 41;\n');
-  const failure = await runNodeTestCheck({ ...check, id: 'failed' });
-  await turn('Verified failure', [failure], 'high');
-  await writeFile(implementation, 'export const answer = () => 42;\n');
-  const recheck = await runNodeTestCheck({ ...check, id: 'passed', resolves: failure.id });
-  await turn('Matching check passed', [recheck], 'low');
+  await runRegressionCycle(workspace, turn);
   if (!live) assert.deepEqual(efforts, ['low', 'high', 'low']);
 } finally {
   if (child) {

@@ -28,6 +28,14 @@ With Codex CLI installed, run `npm run demo:codex`. This starts Codex App Server
 
 To try with your existing ChatGPT sign-in, run `npm run demo:codex -- --chatgpt`. This makes three short model calls against your Codex plan in a temporary read-only workspace. Add `--model MODEL_ID` if your plan offers a different model. The example checks the account mode before starting the three turns. It creates its own App Server session. [Codex App Server](https://developers.openai.com/codex/app-server)
 
+### Use the official Claude Code CLI
+
+With Claude Code installed and signed in through its own sign-in flow, run `npm run demo:claude -- --use-subscription`. It makes three short calls in one Claude Code session, setting `--effort` and resuming that session for each follow-up. It uses the same independent check and policy. Claude Code handles all authentication and model calls. [Claude Code CLI reference](https://code.claude.com/docs/en/cli-reference) · [Anthropic's authentication guidance](https://code.claude.com/docs/en/legal-and-compliance#authentication-and-credential-use)
+
+### Desktop sessions
+
+In an open desktop conversation, you can run the project check and manually choose the next effort with the app's built-in control. The automatic examples above own their respective sessions. [Codex desktop model control](https://learn.chatgpt.com/docs/models?surface=app) · [Claude Desktop effort menu](https://code.claude.com/docs/en/desktop)
+
 ## How it works
 
 1. The caller starts a run at the configured **base effort** (default: `low`).
