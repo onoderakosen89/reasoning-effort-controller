@@ -1,6 +1,6 @@
 # Test Feedback Loop
 
-**Make implementation faster and cheaper with fewer tokens and a Sonnet-class model.**
+**Independent checks for fast, token-efficient implementation with smaller models.**
 
 Once planning, design, and coordination have established the task, give the implementation agent a narrow, repeatable failure and the expected behavior. A short Check loop in Plan–Do–Check–Act gives a smaller model or a low-effort turn a concrete change to make. Independently rerun the failing case and a normal control to verify the result.
 
@@ -12,7 +12,14 @@ Once planning, design, and coordination have established the task, give the impl
 2. **Make one bounded change.** Give Codex or Claude Code the failed check, what you expected, and what happened. Low effort is a starting point for a repair this well scoped.
 3. **Verify.** Rerun the same check and the normal case. If the result stays inconclusive or the next repair would be guesswork, keep the evidence and stop to review the cause.
 
-On a historical message-delivery bug, GPT-6.1 Terra repaired the targeted failure and preserved the normal case at both fixed Low and High. Low took 45 seconds and 1,677 output tokens. High took 67 seconds and 2,694 output tokens. Both left the same five broader checks unresolved. [Evaluation and limits](docs/implementation-evaluation.md)
+In one trial of a historical message-delivery bug, GPT-6.1 Terra and GPT-6.2 Sol both repaired the targeted failure and preserved the normal case at fixed Low and High. Each model ran once per setting.
+
+| Model | Low | High |
+| --- | --- | --- |
+| GPT-6.1 Terra | 45 s, 1,677 output tokens, 10/15 broader checks | 67 s, 2,694 output tokens, 10/15 |
+| GPT-6.2 Sol | 94 s, 3,137 output tokens, 11/15 broader checks | 141 s, 5,347 output tokens, 10/15 |
+
+The trial measured time and token use. See the [full results and limits](docs/implementation-evaluation.md) for input and cached tokens and the checks that stayed unresolved.
 
 ## Check your own project
 
