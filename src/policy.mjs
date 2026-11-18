@@ -2,9 +2,19 @@ import { validateContext } from './context.mjs';
 
 const signature = e => JSON.stringify([e.check_id, e.outcome, e.category ?? null, e.resolves ?? null]);
 const unknown = reason => ({ managed: false, effort: null, reason, unknown: true, replay: false });
+const effortLevels = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
+
+function parseEffort(value, option) {
+  const effort = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (!effortLevels.includes(effort)) throw new Error(`${option} must be one of: ${effortLevels.join(', ')}`);
+  return effort;
+}
 
 export class Policy {
-  constructor({ maxRuns = 256, maxCalls = 256, maxEvents = 256 } = {}) {
+  constructor({ baseEffort = 'low', failureEffort = 'high', maxRuns = 256, maxCalls = 256, maxEvents = 256 } = {}) {
+    this.baseEffort = parseEffort(baseEffort, '--base-effort');
+    this.failureEffort = parseEffort(failureEffort, '--failure-effort');
+    this.initialReason = this.baseEffort === 'low' ? 'initial_low' : 'initial_base_effort';
     this.runs = new Map();
     this.limits = { maxRuns, maxCalls, maxEvents };
   }
@@ -60,10 +70,10 @@ export class Policy {
     }
     const decision = {
       managed: true,
-      effort: pending.size ? 'high' : 'low',
+      effort: pending.size ? this.failureEffort : this.baseEffort,
       reason: failed ? 'reasoning_failure' : pending.size ? 'unresolved_failure' :
         resolved ? 'recheck_succeeded' : uncertain ? 'unknown_observation' :
-          external ? 'external_failure' : prior ? 'no_new_evidence' : 'initial_low',
+          external ? 'external_failure' : prior ? 'no_new_evidence' : this.initialReason,
       unknown: uncertain || observations.length === 0,
       external_failure: external,
       pending: pending.size,

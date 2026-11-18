@@ -46,8 +46,9 @@ export async function inspectPrefix(source, limit) {
   }
 }
 
-export function createRouter({ upstream, model, timeoutMs = 120_000, idleMs = 30_000,
-  maxBodyBytes = 2 * 1024 * 1024, policy = new Policy(), log = row => console.log(JSON.stringify(row)) }) {
+export function createRouter({ upstream, model, baseEffort, failureEffort, timeoutMs = 120_000, idleMs = 30_000,
+  maxBodyBytes = 2 * 1024 * 1024, policy = new Policy({ baseEffort, failureEffort }),
+  log = row => console.log(JSON.stringify(row)) }) {
   const origin = new URL(upstream);
   if (origin.protocol !== 'http:' || origin.hostname !== '127.0.0.1' ||
       origin.pathname !== '/' || origin.search || origin.hash || origin.username || origin.password) {

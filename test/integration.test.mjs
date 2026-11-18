@@ -27,6 +27,31 @@ test('real HTTP: low/high/hold/recheck, whole batch, false positive and unknown'
   assert.ok(f.captures.every(c => c.headers['x-effort-context'] === undefined));
 });
 
+test('real HTTP: configured efforts preserve the failure and recheck conditions', opts, async t => {
+  for (const [baseEffort, failureEffort, path] of [
+    ['high', 'low', '/v1/chat/completions'],
+    ['low', 'XHigh', '/v1/responses'],
+  ]) {
+    const f = await fixture(t, echo, { baseEffort, failureEffort });
+    const run = new RunContext();
+    const responses = path === '/v1/responses';
+    const body = responses
+      ? JSON.stringify({ model: 'fixed-model', input: 'test', reasoning: { effort: 'medium' } })
+      : raw;
+    const send = async observations => {
+      const response = await request(f.origin, { path, body, headers: run.next(observations) });
+      assert.equal(response.status, 200);
+      const result = JSON.parse(response.body);
+      return responses ? result.reasoning.effort : result.reasoning_effort;
+    };
+    assert.equal(await send([]), baseEffort);
+    assert.equal(await send([failure('network', 'network', 'transport')]), baseEffort);
+    assert.equal(await send([failure()]), failureEffort.toLowerCase());
+    assert.equal(await send([{ id: 'other', check_id: 'unrelated', outcome: 'success' }]), failureEffort.toLowerCase());
+    assert.equal(await send([{ id: 'recheck', check_id: 'suite', outcome: 'success', resolves: 'failure' }]), baseEffort);
+  }
+});
+
 test('real HTTP: external errors never become reasoning failures', opts, async t => {
   const f = await fixture(t, echo);
   for (const category of ['approval', 'permission', 'quota', 'transport']) {

@@ -22,9 +22,9 @@ The caller supplies the three example outcomes. The mock upstream reports the ef
 
 ## How it works
 
-1. The caller starts a run and sends a request to the controller. The initial effort for a managed run is **low**.
-2. After an independent check finds a failure attributable to reasoning or generated output, the caller attaches that result to the next request. Effort stays **high** while a classified failure remains unresolved.
-3. When the same check passes, the caller references the original failure. Effort returns to **low** after all outstanding failures have been resolved.
+1. The caller starts a run at the configured **base effort** (default: `low`).
+2. After an independent check finds a failure attributable to reasoning or generated output, the caller attaches that result to the next request. The controller uses the configured **failure effort** (default: `high`) while a classified failure remains unresolved.
+3. When the same check passes, the caller references the original failure. Effort returns to the base level after all outstanding failures have been resolved.
 
 Permission, approval, quota, and transport failures do not raise effort. The controller treats requests without valid context as passthrough. It leaves the contents of model messages, tools, and unrelated request fields intact.
 
@@ -35,6 +35,15 @@ npm start -- --upstream http://127.0.0.1:8317 --model YOUR_MODEL_ID --port 8318
 ```
 
 Use `http://127.0.0.1:8318/v1` as the caller's API base URL. The upstream must be an HTTP server listening on IPv4 loopback. The controller supports OpenAI-compatible `/v1/chat/completions` and `/v1/responses` requests. The upstream must support the requested effort values.
+
+Set the two levels at startup:
+
+| Sequence | Options |
+| --- | --- |
+| High → Low → High | `--base-effort high --failure-effort low` |
+| Low → XHigh → Low | `--base-effort low --failure-effort xhigh` |
+
+Accepted values are `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, and `max` (case-insensitive). Choose levels your upstream model supports. The options change the values sent at each state while keeping the same switching conditions.
 
 Use `RunContext` from `src/adapter.mjs` to add the `X-Effort-Context` header:
 

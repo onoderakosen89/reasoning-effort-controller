@@ -38,10 +38,11 @@ category は `reasoning|approval|permission|quota|transport|unknown`。
 
 ## 状態と再送
 
-状態は run_id ごと。初回は low。reasoning failure が1つでも未解決なら high。
-全未解決 failure に対応する再検査が成功した時だけ low。
-単なる読み取り成功・最後のtoolだけの成功・文字列FAILED・同じtoolの繰返しは降格や昇格の根拠にしない。
-approval/permission/quota/transport/unknown は未解決推論failureを増やさず、既存highも解除しない。
+状態は run_id ごと。初回は通常時の値（`--base-effort`、既定は `low`）。
+reasoning failure が1つでも未解決なら失敗時の値（`--failure-effort`、既定は `high`）。
+全未解決 failure に対応する再検査が成功した時に通常時の値に戻る。
+単なる読み取り成功・最後のtoolだけの成功・文字列FAILED・同じtoolの繰返しは状態の切替の根拠にしない。
+approval/permission/quota/transport/unknown は未解決推論failureを増やさず、既存の失敗状態も解除しない。
 
 同じ call_id の再送は元の判断を使い、観測を再適用しない。これはHTTP応答のキャッシュではない。
 上流への再送はそのまま通るので、上流実行のexactly-onceを保証しない。
