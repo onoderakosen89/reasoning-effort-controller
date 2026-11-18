@@ -21,6 +21,19 @@ In one trial of a historical message-delivery bug, GPT-6.1 Terra and GPT-6.2 Sol
 
 The trial measured time and token use. See the [full results and limits](docs/implementation-evaluation.md) for input and cached tokens and the checks that stayed unresolved.
 
+## Try the complete repair loop
+
+From a checkout of this repository, use Node.js 26.10.0:
+
+```sh
+npm run --silent demo:repair
+npm run --silent demo:repair -- --show-stop
+```
+
+The first command reproduces a failure, hands the assertion evidence to a scripted repair, and independently reruns the regression and its normal control. The second simulates two unsuccessful repairs, exits with code 1, and returns a `consultation` object with both attempts, the final difference, the latest evidence, and the premise to check. An inconclusive run exits with code 2. The caller can display or route the consultation.
+
+Run `npm run --silent demo:repair -- --chatgpt` to have Codex apply the fix at fixed Low using your ChatGPT sign-in. The demo uses a disposable checkout-free fixture. A follow-up appends only the new check result to the same Codex session. Reported usage includes cached input when Codex supplies it. The caller API is [runRepairLoop](src/repair-loop.mjs).
+
 ## Check your own project
 
 Use Node.js 26.10.0 and point the command at a trusted Node.js test file:
@@ -37,7 +50,7 @@ The output leads with the check result, followed by the failing assertion and it
 | 1 | An assertion failure was confirmed |
 | 2 | The check was inconclusive or could not run |
 
-For machine-readable output, run `npm run --silent check:node -- --json` with your test arguments. Pass `observation` to `RunContext` and keep `evidence` for the repair agent. The check command makes no model calls.
+An inconclusive check prints a reason when available. For machine-readable output, run `npm run --silent check:node -- --json` with your test arguments. Pass `observation` to `RunContext` and keep `evidence` for the repair agent. The check command makes no model calls.
 
 For a Python project, use an interpreter with pytest installed:
 
@@ -152,6 +165,10 @@ const nextHeaders = run.next([observation]);
 ```
 
 For a recheck, use the same files and check ID, a new observation ID, and `resolves` set to the original failure ID. The adapter classifies assertion failures from structured runner events. An incomplete run or an unclassified error does not change the effort state.
+
+## License
+
+[MIT](LICENSE)
 
 ## Scope
 

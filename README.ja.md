@@ -21,6 +21,19 @@
 
 入力トークン、キャッシュ分、取りこぼした検査も比較結果に載せています。[比較の条件と結果](docs/implementation-evaluation.md)
 
+## 修正から再検査まで試す
+
+このリポジトリを取得し、Node.js 26.10.0 で実行します。
+
+```sh
+npm run --silent demo:repair
+npm run --silent demo:repair -- --show-stop
+```
+
+1つ目は失敗を再現し、台本の修正役に証拠を渡して、同じ異常例と正常例を再検査します。2つ目は修正が2回とも外れる例です。終了値は `1` で、2回の経過、最後の差分、失敗の証拠、見直す前提が `consultation` にまとまります。検査が未確認なら終了値は `2` です。相談の表示や配送は呼び出し元で行えます。
+
+`npm run --silent demo:repair -- --chatgpt` では、ChatGPT にサインインした Codex が、使い捨ての試料を固定 Low で直します。修正がもう一度必要なら、同じセッションに新しい検査結果だけを足します。Codex が返した場合はキャッシュ済み入力トークンも表示します。[呼び出し元向けの関数](src/repair-loop.mjs)
+
 ## 自分のプロジェクトで確かめる
 
 Node.js 26.10.0 で、信頼できるテストファイルを指定します。
@@ -29,7 +42,7 @@ Node.js 26.10.0 で、信頼できるテストファイルを指定します。
 npm run check:node -- --cwd /path/to/project --check-id regression --id before test/regression.test.mjs
 ```
 
-結果と、失敗したアサーションの場所が出ます。終了値は合格が `0`、アサーション失敗が `1`、未確認が `2` です。修正後は同じファイル・検査IDで `--id after --resolves before` を付けて実行します。モデルや API キーは不要です。台本から使う場合は `npm run --silent check:node -- --json` に検査の引数を足し、返る `observation` を `RunContext` に渡せます。
+結果、失敗したアサーションの場所、分かる範囲で未確認の理由が出ます。終了値は合格が `0`、アサーション失敗が `1`、未確認が `2` です。修正後は同じファイル・検査IDで `--id after --resolves before` を付けて実行します。モデルや API キーは不要です。台本から使う場合は `npm run --silent check:node -- --json` に検査の引数を足し、返る `observation` を `RunContext` に渡せます。
 
 pytest を使う場合は、pytest が入っている Python を指定します。テスト本体のアサーション失敗は証拠付きで返し、テストの収集や準備で止まった場合は未確認にします。
 
@@ -98,3 +111,7 @@ npm start -- --upstream http://127.0.0.1:8317 --model YOUR_MODEL_ID --port 8318
 npm test
 npm run test:integration
 ```
+
+## ライセンス
+
+[MIT](LICENSE)

@@ -30,3 +30,7 @@ In a separate earlier trial on the same problem family, both GPT-6.1 Terra and G
 | GPT-6.2 Sol | 13/13 entrypoint checks | 9/13 entrypoint checks |
 
 This earlier comparison used a different fixture and acceptance set. The limited brief still contained a clue about the dropped message, and each condition ran once. These results show which checks passed with each handoff on that trial.
+
+## Repair-loop smoke test
+
+In a separate synthetic smoke test, GPT-6.2 Sol at fixed Low applied a repair and the independent regression and normal control passed. A second run deliberately changed the fixture after the first model turn to force a failed recheck. The caller resumed the existing Codex session with the new assertion evidence and the second recheck passed. Codex reported 196,205 input tokens for that follow-up turn, of which 177,280 were cached. This shows cache use on that run. It does not estimate the savings from resuming compared with a fresh session.

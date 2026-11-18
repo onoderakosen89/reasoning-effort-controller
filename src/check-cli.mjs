@@ -5,6 +5,20 @@ import { runNodeTestCheck } from './checkers/node-test.mjs';
 import { runPytestCheck } from './checkers/pytest.mjs';
 import { validateContext } from './context.mjs';
 
+const reasonText = {
+  collection_failed: 'Pytest could not collect the tests. Check test imports and run python -m pytest with the same interpreter.',
+  incomplete_run: 'The runner did not report a complete result.',
+  invalid_test_selection: 'Check the pytest file paths and test arguments.',
+  output_limit: 'The test runner exceeded its output limit. Reduce test output and rerun.',
+  no_tests: 'The runner did not find runnable tests.',
+  pytest_missing: 'Install pytest in the interpreter selected with --python.',
+  pytest_report_unavailable: 'Pytest did not produce a report. Run python -m pytest with the same interpreter.',
+  python_launch_failed: 'Check that --python points to an executable Python interpreter.',
+  skipped_tests: 'The run contains skipped or deferred tests.',
+  test_error: 'The runner reported an error outside a confirmed assertion failure. Run it directly to inspect the error.',
+  test_timeout: 'The test run exceeded its time limit.',
+};
+
 try {
   const { values, positionals } = parseArgs({
     allowPositionals: true,
@@ -33,13 +47,15 @@ try {
       observations: [{ id, check_id: checkId, outcome: 'success', ...(resolves === undefined ? {} : { resolves }) }],
     });
     const evidence = [];
+    let reason;
     const files = positionals.map(file => resolve(cwd, file));
     const observation = await runner({ files, cwd: resolve(cwd), python: values.python, checkId, id, resolves,
-      onFailure: failure => evidence.push(failure) });
+      onFailure: failure => evidence.push(failure), onUnknown: value => { reason = value; } });
     if (values.json) {
-      console.log(JSON.stringify({ observation, evidence }));
+      console.log(JSON.stringify({ observation, evidence, ...(reason && { reason }) }));
     } else {
       console.log(`${observation.outcome}: ${observation.check_id} (${observation.id})`);
+      if (reason) console.log(`  ${reasonText[reason]}`);
       for (const item of evidence) {
         console.log(`  ${item.name} (${item.file}:${item.line})\n  ${item.message}`);
       }

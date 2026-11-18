@@ -1,7 +1,7 @@
 import { run } from 'node:test';
 
 /** Turn a trusted Node.js test run into one observation for RunContext. */
-export async function runNodeTestCheck({ files, cwd, checkId, id, resolves, timeoutMs = 30_000, onFailure }) {
+export async function runNodeTestCheck({ files, cwd, checkId, id, resolves, timeoutMs = 30_000, onFailure, onUnknown }) {
   if (!Array.isArray(files) || files.length === 0) throw new TypeError('Provide at least one test file');
   const observation = { id, check_id: checkId };
   let summary;
@@ -32,5 +32,10 @@ export async function runNodeTestCheck({ files, cwd, checkId, id, resolves, time
       summary.counts.passed > 0 && !summary.counts.skipped && !summary.counts.todo) {
     return { ...observation, outcome: 'success', ...(resolves === undefined ? {} : { resolves }) };
   }
+  const reason = uncertainFailure ? 'test_error'
+    : !summary || summary.counts.cancelled ? 'incomplete_run'
+    : summary.counts.skipped || summary.counts.todo ? 'skipped_tests'
+    : !summary.counts.passed ? 'no_tests' : 'incomplete_run';
+  onUnknown?.(reason);
   return { ...observation, outcome: 'unknown' };
 }
