@@ -16,5 +16,5 @@
     "demo:codex": "node examples/codex-app-server.mjs",
     "demo:claude": "node examples/claude-code.mjs"
   },
-  "description": "Independent regression checks and check-driven reasoning effort for Codex and Claude Code."
+  "description": "Fast independent regression checks and repeatable repair verification for AI-assisted development."
 }

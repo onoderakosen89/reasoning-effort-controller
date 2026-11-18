@@ -1,10 +1,18 @@
 # Test Feedback Loop
 
-**Catch a broken change before spending another turn guessing.**
+**Build quickly with AI by shortening the time from a broken change to a useful test result.**
 
-Run an independent test before the next repair turn. Give Codex or Claude Code evidence of what broke, then rerun the same check to verify the fix. Use a native agent session or the local HTTP controller to change reasoning effort when the evidence calls for it.
+This project grew out of a practical question from someone who started without a programming background: how can you build reliable software with AI without spending most of your time and tokens on retries? The method focuses on the Check in Plan–Do–Check–Act. Give the coding agent a small, repeatable failure, let it make a targeted change at low reasoning effort, and independently rerun the failing case and a normal control.
 
-[日本語](README.ja.md) · [Agent Skill](skills/test-feedback-loop/SKILL.md) · [Wire specification (Japanese)](SPEC.md)
+[日本語](README.ja.md) · [Agent Skill](skills/test-feedback-loop/SKILL.md)
+
+## The workflow
+
+1. **Reproduce.** Run a small check against the behavior you expect, with a normal case to check for regressions.
+2. **Make one bounded change.** Give Codex or Claude Code the failed check, what you expected, and what happened. Low effort is a starting point for a repair this well scoped.
+3. **Verify.** Rerun the same check and the normal case. If the result stays inconclusive or the next repair would be guesswork, keep the evidence and stop to review the cause.
+
+In one historical regression trial, a message was dropped before a conversation opened. Codex repaired the failure in one low-effort turn after receiving the reproduction. The original test and the normal comparison both passed on recheck. That trial shows how the workflow can work. The time and token savings compared with a fixed higher effort are still unmeasured.
 
 ## Check your own project
 
@@ -30,7 +38,11 @@ Have a useful pytest, Vitest, TypeScript, Cargo, schema, or other check? Open a 
 
 The bundled checker currently supports Node.js tests.
 
-## Run the demo
+## Optional effort switching
+
+The check and repair workflow works with a fixed effort. For experiments with automatic effort switching, the repository includes a local HTTP controller and examples that call the native Codex and Claude Code interfaces. [Wire specification (Japanese)](SPEC.md)
+
+### Run the switching demo
 
 Use Node.js 26.10.0. The demo starts a mock upstream and the controller on loopback and closes both when it finishes. It needs no dependencies, API keys, or model calls.
 
@@ -60,7 +72,7 @@ With Claude Code installed and signed in through its own sign-in flow, run `npm 
 
 In an open desktop conversation, you can run the project check and manually choose the next effort with the app's built-in control. The automatic examples above own their respective sessions. [Codex desktop model control](https://learn.chatgpt.com/docs/models?surface=app) · [Claude Desktop effort menu](https://code.claude.com/docs/en/desktop)
 
-## How it works
+### How the controller switches
 
 1. The caller starts a run at the configured **base effort** (default: `low`).
 2. After an independent check finds a failure attributable to reasoning or generated output, the caller attaches that result to the next request. The controller uses the configured **failure effort** (default: `high`) while a classified failure remains unresolved.
@@ -78,7 +90,7 @@ flowchart LR
     Recheck -->|Still unresolved| Retry
 ```
 
-## Connect a caller
+### Connect a caller
 
 ```sh
 npm start -- --upstream http://127.0.0.1:8317 --model YOUR_MODEL_ID --port 8318
