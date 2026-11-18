@@ -8,7 +8,7 @@
 
 ## 修正から再検査まで試す
 
-Node.js 26.10.0 を使います。次の2つのデモは、モデルのアカウントや API キーなしで動きます。
+Node.js 24 以上 を使います。次の2つのデモは、モデルのアカウントや API キーなしで動きます。
 
 ```sh
 git clone https://github.com/onoderakosen89/test-feedback-loop.git
@@ -24,7 +24,7 @@ npm run --silent demo:repair -- --show-stop
 
 終了値は `1` で、2回の経過、最後の差分、失敗の証拠、見直す前提が `consultation` にまとまります。検査が未確認なら終了値は `2` です。相談の表示や配送は呼び出し元で行えます。
 
-`npm run --silent demo:repair -- --chatgpt` では、ChatGPT にサインインした Codex が、使い捨ての試料を固定 Low で直します。修正がもう一度必要なら、同じセッションに新しい検査結果だけを足します。Codex が返した場合はキャッシュ済み入力トークンも表示します。[呼び出し元向けの関数](src/repair-loop.mjs)
+`npm run --silent demo:repair -- --chatgpt` では、ChatGPT にサインインした Codex が、使い捨ての試料を固定 Low で直します。修正がもう一度必要なら、同じセッションに新しい検査結果だけを足します。Codex が返した場合はキャッシュ済み入力トークンも表示します。[呼び出し元向けの関数](src/repair-loop.mjs)は既定で2回まで修正し、`maxRepairs` に正の整数を指定すると上限を変えられます。
 
 ## 検査から始める作り方
 
@@ -39,7 +39,7 @@ npm run --silent demo:repair -- --show-stop
 | GPT-6.1 Terra | 45秒・出力1,677トークン・広い検査10/15件 | 67秒・出力2,694トークン・10/15件 |
 | GPT-6.2 Sol | 94秒・出力3,137トークン・広い検査11/15件 | 141秒・出力5,347トークン・10/15件 |
 
-入力トークン、キャッシュ分、取りこぼした検査も比較結果に載せています。[比較の条件と結果](docs/implementation-evaluation.md)
+**この1件では、固定 Low は固定 High より約33%短時間で、出力トークンは38〜41%少なくなりました。** 両モデルとも両設定で狙った検査を通過しました。入力トークン、キャッシュ分、取りこぼした検査も比較結果に載せています。[比較の条件と結果](docs/implementation-evaluation.md)
 
 ## 自分のプロジェクトで確かめる
 
@@ -49,13 +49,21 @@ npm run --silent demo:repair -- --show-stop
 npm run check:node -- --cwd /path/to/project --check-id regression --id before test/regression.test.mjs
 ```
 
-結果、失敗したアサーションの場所、分かる範囲で未確認の理由が出ます。終了値は合格が `0`、アサーション失敗が `1`、未確認が `2` です。修正後は同じファイル・検査IDで `--id after --resolves before` を付けて実行します。モデルや API キーは不要です。台本から使う場合は `npm run --silent check:node -- --json` に検査の引数を足し、返る `observation` を `RunContext` に渡せます。
+結果、失敗したアサーションの場所、分かる範囲で未確認の理由が出ます。修正後は同じファイル・検査IDで `--id after --resolves before` を付けて実行します。モデルや API キーは不要です。台本から使う場合は `npm run --silent check:node -- --json` に検査の引数を足し、返る `observation` を `RunContext` に渡せます。
+
+| 終了値 | 意味 |
+| --- | --- |
+| 0 | 検査に合格 |
+| 1 | アサーションの失敗を確認 |
+| 2 | 未確認、または検査を実行できなかった |
 
 pytest を使う場合は、pytest が入っている Python を指定します。テスト本体のアサーション失敗は証拠付きで返し、テストの収集や準備で止まった場合は未確認にします。
 
 ```sh
 npm run check:pytest -- --cwd /path/to/project --python /path/to/venv/bin/python --check-id regression --id before tests/test_regression.py
 ```
+
+別のプロジェクトから直接呼ぶ場合は、このチェックアウトで `npm link` を実行し、対象プロジェクトで `tfl-check --help` を実行します。Python のテストなら `tfl-check --runner pytest --python /path/to/venv/bin/python tests/test_regression.py` です。任意のプロキシも `test-feedback-loop` として起動できます。
 
 ## 独立検査を持ち寄る
 
@@ -69,13 +77,23 @@ Node.js と pytest の検査アダプタを同梱しています。
 
 ### 切り替えのデモ
 
-Node.js 26.10.0 で実行します。模擬上流とプロキシをローカルで起動し、終了時に閉じます。API キーや実モデルは不要です。
+Node.js 24 以上 で実行します。模擬上流とプロキシをローカルで起動し、終了時に閉じます。API キーや実モデルは不要です。
 
 ```sh
 npm run demo
 ```
 
 最初は Low。Node.js のテストが実際に落ちると High。同じテストが修正後に通ると Low に戻ります。権限・承認・利用枠・通信の失敗は引き上げに使いません。
+
+```mermaid
+flowchart LR
+    Base["通常のエフォート"] --> Check["独立検査"]
+    Check -->|失敗を確認| Retry["失敗時のエフォート"]
+    Retry --> Recheck["同じ検査を再実行"]
+    Recheck -->|合格| Base
+    Check -->|未確認| Keep["現在のエフォートを維持"]
+    Recheck -->|失敗が残る| Retry
+```
 
 ### Codex で直接試す
 

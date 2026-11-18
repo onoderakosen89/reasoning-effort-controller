@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -19,6 +20,7 @@ const reasonText = {
   test_timeout: 'The test run exceeded its time limit.',
 };
 
+let commandName = 'tfl-check';
 try {
   const { values, positionals } = parseArgs({
     allowPositionals: true,
@@ -33,13 +35,14 @@ try {
       help: { type: 'boolean' },
     },
   });
+  if (!['node', 'pytest'].includes(values.runner)) throw new TypeError('Choose node or pytest');
+  commandName = `check:${values.runner}`;
   if (values.help) {
-    console.log('npm run check:node|check:pytest -- [--cwd DIR] [--check-id ID] [--id ID] [--resolves FAILURE_ID] [--json] TEST_FILE ...');
+    console.log('tfl-check [--runner node|pytest] [--cwd DIR] [--check-id ID] [--id ID] [--resolves FAILURE_ID] [--json] TEST_FILE ...');
     console.log('For pytest, select the interpreter with --python BIN.');
   } else {
     const { cwd, id, resolves } = values;
     const runner = { node: runNodeTestCheck, pytest: runPytestCheck }[values.runner];
-    if (!['node', 'pytest'].includes(values.runner)) throw new TypeError('Choose node or pytest');
     const checkId = values['check-id'] ?? `${values.runner}-tests`;
     // Fail fast on invalid IDs before running project code.
     validateContext({
@@ -63,6 +66,6 @@ try {
     process.exitCode = { success: 0, failure: 1, unknown: 2 }[observation.outcome];
   }
 } catch (error) {
-  console.error(`check:node: ${error.message}`);
+  console.error(`${commandName}: ${error.message}`);
   process.exitCode = 2;
 }

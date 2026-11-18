@@ -7,7 +7,7 @@ description: Run fast independent checks for bounded implementation work. Use wh
 
 Use a project-owned regression test. Choose a stable check ID and use the same test files and check ID to verify the repair. Before running it, confirm that the project and its test code are trusted.
 
-Use Node.js 26.10.0. From a checkout of [the controller](https://github.com/onoderakosen89/test-feedback-loop), run:
+Use Node.js 24 or later. From a checkout of [the controller](https://github.com/onoderakosen89/test-feedback-loop), run:
 
 ```sh
 npm run check:node -- --cwd /path/to/project --check-id regression --id before path/to/regression.test.mjs

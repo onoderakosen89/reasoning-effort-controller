@@ -37,3 +37,18 @@ test('an inconclusive recheck stops and preserves its reason and the diff', asyn
   assert.equal(result.consultation.latest.reason, 'collection_failed');
   assert.equal(result.consultation.diff, 'new diff');
 });
+
+test('callers can set a positive repair limit', async () => {
+  let edits = 0;
+  const options = {
+    check: async ({ id }) => ({ observation: { id, outcome: 'failure' }, evidence: [] }),
+    repair: async () => { edits++; },
+    readDiff: async () => String(edits),
+  };
+  await assert.rejects(runRepairLoop({ ...options, maxRepairs: 0 }), RangeError);
+  assert.equal(edits, 0);
+  const result = await runRepairLoop({ ...options, maxRepairs: 3 });
+  assert.equal(edits, 3);
+  assert.equal(result.status, 'repair_limit');
+  assert.match(result.consultation.summary, /\(3\)/);
+});

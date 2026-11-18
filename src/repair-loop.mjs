@@ -1,7 +1,4 @@
-const MAX_REPAIRS = 2;
-
 const stopSummary = {
-  repair_limit: 'Both repairs left the independent check failing.',
   unknown: 'The independent check could not establish a result.',
   repair_interrupted: 'The repair turn did not complete.',
   no_change: 'The last repair left the project diff unchanged and the check still failed.',
@@ -15,7 +12,10 @@ const questions = {
 };
 
 /** The caller supplies a trusted check, a repair session, and a project diff reader. */
-export async function runRepairLoop({ check, repair, readDiff }) {
+export async function runRepairLoop({ check, repair, readDiff, maxRepairs = 2 }) {
+  if (!Number.isSafeInteger(maxRepairs) || maxRepairs < 1) {
+    throw new RangeError('maxRepairs must be a positive safe integer');
+  }
   const attempts = [];
   const initial = await check({ id: 'before' });
   let latest = initial;
@@ -27,16 +27,19 @@ export async function runRepairLoop({ check, repair, readDiff }) {
     const question = latest.reason === 'regression_test_changed'
       ? 'Can the original independent check be restored before resuming?'
       : questions[status];
+    const summary = status === 'repair_limit'
+      ? `The independent check still failed after reaching the repair limit (${maxRepairs}).`
+      : stopSummary[status];
     return {
       ...run,
-      consultation: { reason: status, summary: stopSummary[status], question, latest, diff, attempts },
+      consultation: { reason: status, summary, question, latest, diff, attempts },
     };
   }
 
   if (initial.observation.outcome === 'success') return result('already_passed');
   if (initial.observation.outcome !== 'failure') return result('unknown');
 
-  for (let number = 1; number <= MAX_REPAIRS; number++) {
+  for (let number = 1; number <= maxRepairs; number++) {
     const problem = { ...latest, attempt: number };
     let usage;
     try {

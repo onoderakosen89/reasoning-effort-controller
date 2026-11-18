@@ -8,7 +8,7 @@ Once planning, design, and coordination have established the task, give the impl
 
 ## Try the complete repair loop
 
-Use Node.js 26.10.0. Both demos run without a model account or API key.
+Use Node.js 24 or later. Both demos run without a model account or API key.
 
 ```sh
 git clone https://github.com/onoderakosen89/test-feedback-loop.git
@@ -24,7 +24,7 @@ npm run --silent demo:repair -- --show-stop
 
 This exits with code 1 and returns a `consultation` object with both attempts, the final difference, the latest evidence, and the premise to check. An inconclusive run exits with code 2. The caller can display or route the consultation.
 
-Run `npm run --silent demo:repair -- --chatgpt` to have Codex apply the fix at fixed Low using your ChatGPT sign-in. The demo uses a disposable checkout-free fixture. A follow-up appends only the new check result to the same Codex session. Reported usage includes cached input when Codex supplies it. The caller API is [runRepairLoop](src/repair-loop.mjs).
+Run `npm run --silent demo:repair -- --chatgpt` to have Codex apply the fix at fixed Low using your ChatGPT sign-in. The demo uses a disposable checkout-free fixture. A follow-up appends only the new check result to the same Codex session. Reported usage includes cached input when Codex supplies it. The [runRepairLoop API](src/repair-loop.mjs) defaults to two repair attempts. Callers can set `maxRepairs` to a positive integer.
 
 ## The workflow
 
@@ -39,7 +39,7 @@ In one trial of a historical message-delivery bug, GPT-6.1 Terra and GPT-6.2 Sol
 | GPT-6.1 Terra | 45 s, 1,677 output tokens, 10/15 broader checks | 67 s, 2,694 output tokens, 10/15 |
 | GPT-6.2 Sol | 94 s, 3,137 output tokens, 11/15 broader checks | 141 s, 5,347 output tokens, 10/15 |
 
-The trial measured time and token use. See the [full results and limits](docs/implementation-evaluation.md) for input and cached tokens and the checks that stayed unresolved.
+**In this one repair, fixed Low took about 33% less time and used 38–41% fewer output tokens than fixed High.** Both models met the targeted check at both settings. See the [full results and limits](docs/implementation-evaluation.md) for input and cached tokens and the checks that stayed unresolved.
 
 ## Check your own project
 
@@ -67,6 +67,8 @@ npm run check:pytest -- --cwd /path/to/project --python /path/to/venv/bin/python
 
 An assertion failure in the test body produces evidence. Collection and setup failures produce an unknown result.
 
+To run the checker from other projects, run `npm link` in this checkout. Then run `tfl-check --help` from your project. For a Python test, use `tfl-check --runner pytest --python /path/to/venv/bin/python tests/test_regression.py`. The link also installs the optional proxy command `test-feedback-loop`.
+
 ## Share an independent check
 
 Have a useful pytest, Vitest, TypeScript, Cargo, schema, or other check? Open a [check proposal](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=check-adapter.yml) with a small failing example, a passing recheck, and a case where the runner could not determine the result. Proposals are welcome before implementation. If you have a working adapter, open a pull request with those examples as tests. [Contribution guide](CONTRIBUTING.md)
@@ -79,7 +81,7 @@ The check and repair workflow works with a fixed effort. For experiments with au
 
 ### Run the switching demo
 
-Use Node.js 26.10.0. The demo starts a mock upstream and the controller on loopback and closes both when it finishes. It needs no dependencies, API keys, or model calls.
+Use Node.js 24 or later. The demo starts a mock upstream and the controller on loopback and closes both when it finishes. It needs no dependencies, API keys, or model calls.
 
 ```sh
 npm run demo

@@ -1,4 +1,6 @@
-# Reasoning Effort Controller の通信仕様
+# HTTP エフォート制御プロキシの通信仕様
+
+Test Feedback Loop に同梱する任意の HTTP エフォート制御プロキシの仕様です。
 
 信頼するローカルの呼び出し元が検査結果を渡し、プロキシが固定したモデルへの次の HTTP リクエストのエフォートを設定する。
 対象は `POST /v1/chat/completions` と `POST /v1/responses`。

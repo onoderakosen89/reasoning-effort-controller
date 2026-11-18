@@ -1,7 +1,8 @@
+#!/usr/bin/env node
 import { parseArgs } from 'node:util';
 import { createRouter } from './proxy.mjs';
 
-const serviceName = 'reasoning-effort-controller';
+const serviceName = 'test-feedback-loop';
 
 try {
   const { values } = parseArgs({ options: {
@@ -12,10 +13,9 @@ try {
     'idle-ms': { type: 'string', default: '30000' }, help: { type: 'boolean' },
   } });
   if (values.help) {
-    console.log('node src/cli.mjs --upstream http://127.0.0.1:8317 --model MODEL [--port 8318]\n'
+    console.log('test-feedback-loop --upstream http://127.0.0.1:8317 --model MODEL [--port 8318]\n'
       + '  [--base-effort low] [--failure-effort high] [--timeout-ms 120000] [--idle-ms 30000]');
   } else {
-    if (process.version !== 'v26.10.0') throw new Error('validated runtime: Node.js v26.10.0');
     if (!values.upstream || !values.model) throw new Error('--upstream and --model are required');
     const port = Number(values.port);
     if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('port must be 1..65535');

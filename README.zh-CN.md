@@ -8,7 +8,7 @@
 
 ## 试跑一次完整的修复流程
 
-使用 Node.js 26.10.0。以下两个演示无需模型账号或 API 密钥。
+使用 Node.js 24 或更高版本。以下两个演示无需模型账号或 API 密钥。
 
 ```sh
 git clone https://github.com/onoderakosen89/test-feedback-loop.git
@@ -24,7 +24,7 @@ npm run --silent demo:repair -- --show-stop
 
 该命令以状态码 `1` 退出，并返回 `consultation` 对象。其中包含两次尝试的结果、最终差异、最近一次失败的证据，以及需要复核的前提。检查结果无法确定时，退出码为 `2`。调用方可以显示或转发这份记录。
 
-如已用 ChatGPT 登录 Codex，可以运行 `npm run --silent demo:repair -- --chatgpt`，让 Codex 以固定的 Low 推理强度修复临时示例。需要再次修复时，只向同一个会话追加新的检查结果。若 Codex 提供缓存数据，输出中也会显示缓存的输入 token 数。[调用接口 runRepairLoop](src/repair-loop.mjs)
+如已用 ChatGPT 登录 Codex，可以运行 `npm run --silent demo:repair -- --chatgpt`，让 Codex 以固定的 Low 推理强度修复临时示例。需要再次修复时，只向同一个会话追加新的检查结果。若 Codex 提供缓存数据，输出中也会显示缓存的输入 token 数。[调用接口 runRepairLoop](src/repair-loop.mjs)默认最多修复两次，调用方可通过正整数 `maxRepairs` 调整上限。
 
 ## 工作流程
 
@@ -39,7 +39,7 @@ npm run --silent demo:repair -- --show-stop
 | GPT-6.1 Terra | 45 秒，输出 1,677 token，扩展检查通过 10/15 | 67 秒，输出 2,694 token，通过 10/15 |
 | GPT-6.2 Sol | 94 秒，输出 3,137 token，扩展检查通过 11/15 | 141 秒，输出 5,347 token，通过 10/15 |
 
-本次试验记录了用时和 token 数。完整结果还列出了输入量、缓存量和未通过的检查。[评测结果与适用范围（英文）](docs/implementation-evaluation.md)
+**在这一次修复中，固定 Low 比固定 High 用时少约 33%，输出 token 少 38%–41%。** 两种模型在两种设置下均通过了目标检查。完整结果还列出了输入量、缓存量和未通过的检查。[评测结果与适用范围（英文）](docs/implementation-evaluation.md)
 
 ## 检查自己的项目
 
@@ -67,6 +67,8 @@ npm run check:pytest -- --cwd /path/to/project --python /path/to/venv/bin/python
 
 测试主体中的断言失败会产生证据。收集和初始化失败时，结果为未确认。
 
+要从其他项目直接运行，请先在本仓库的工作目录中运行 `npm link`，再到目标项目运行 `tfl-check --help`。检查 Python 测试时，可运行 `tfl-check --runner pytest --python /path/to/venv/bin/python tests/test_regression.py`。可选代理命令为 `test-feedback-loop`。
+
 ## 分享独立检查
 
 欢迎分享实用的 pytest、Vitest、TypeScript、Cargo 或模式校验等检查。提交提案时，请附上一个最小失败示例、一个修复后能通过的示例，以及一个无法确定结果的示例。已有可用适配器时，也可把这些示例写成测试后提交 PR。当前内置 Node.js 和 pytest 检查。[提交检查提案](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=check-adapter.yml) · [贡献指南（英文）](CONTRIBUTING.md)
@@ -77,6 +79,16 @@ npm run check:pytest -- --cwd /path/to/project --python /path/to/venv/bin/python
 
 ```sh
 npm run demo
+```
+
+```mermaid
+flowchart LR
+    Base["默认推理强度"] --> Check["独立检查"]
+    Check -->|确认失败| Retry["失败时的推理强度"]
+    Retry --> Recheck["运行同一检查"]
+    Recheck -->|通过| Base
+    Check -->|结果不确定| Keep["保留当前推理强度"]
+    Recheck -->|仍有失败| Retry
 ```
 
 仓库也提供 Codex App Server 和 Claude Code CLI 示例。桌面会话可独立运行检查，再通过应用自带的设置手动调整推理强度。检查结果、任务是否完成以及何时转交人工由调用方负责。[配置和接入方法（英文）](README.md#optional-effort-switching) · [协议说明（日文）](SPEC.md)

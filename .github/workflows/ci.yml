@@ -1,0 +1,37 @@
+name: CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['24.0.0', '24', '26']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install 'pytest>=9,<10'
+      - run: npm test
+      - run: npm run test:pytest
+      - run: npm run test:integration
+      - run: npm run demo
+      - run: npm run demo:repair
+      - name: Verify the repair limit
+        run: |
+          result=$(mktemp)
+          status=0
+          npm run --silent demo:repair -- --show-stop > "$result" || status=$?
+          test "$status" -eq 1
+          jq -e '.status == "repair_limit" and (.consultation.attempts | length) == 2' "$result"
