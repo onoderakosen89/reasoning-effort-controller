@@ -1,10 +1,14 @@
 # Test Feedback Loop
 
-**用独立检查缩短修复时间，让较小的模型也能用较少的 token 完成实现。**
+**用 Low 实现和修复，在问题还容易改的时候发现它。**
 
-在计划和设计确定后，把能够稳定复现的失败和预期行为交给负责实现的代理。缩短 PDCA 中的检查环节，让代理专注于一处具体修复。修复后，独立复查原来的失败用例和正常对照用例。
+让编码代理用较低推理强度（Low）完成小步实现和修复。每走一步，就独立运行最早能判定行为是否正确的检查。把检查证据交给代理，而不是让它“再想想”。如果检查无法得出结论，就先弄清原因，不要连续猜测和修改。
+
+例如，应用提示笔记已保存，但刷新后笔记消失。无需等整个界面做完：存储层或 API 一就绪，就能检查写入后是否读回原值。保留一条编辑旧笔记的正常用例，等界面就绪后再补上只有浏览器才能验证的部分。
 
 [English](README.md) · [日本語](README.ja.md) · [Agent Skill](skills/test-feedback-loop/SKILL.md)
+
+**用 AI 做应用但不写测试？** [分享现象和检查方法](#分享尽早发现问题的检查方法)，无需代码。**要接入自动化？** [试跑演示](#试跑一次完整的修复流程)。
 
 ## 试跑一次完整的修复流程
 
@@ -69,9 +73,18 @@ npm run check:pytest -- --cwd /path/to/project --python /path/to/venv/bin/python
 
 要从其他项目直接运行，请先在本仓库的工作目录中运行 `npm link`，再到目标项目运行 `tfl-check --help`。检查 Python 测试时，可运行 `tfl-check --runner pytest --python /path/to/venv/bin/python tests/test_regression.py`。可选代理命令为 `test-feedback-loop`。
 
-## 分享独立检查
+## 分享尽早发现问题的检查方法
 
-欢迎分享实用的 pytest、Vitest、TypeScript、Cargo 或模式校验等检查。提交提案时，请附上一个最小失败示例、一个修复后能通过的示例，以及一个无法确定结果的示例。已有可用适配器时，也可把这些示例写成测试后提交 PR。当前内置 Node.js 和 pytest 检查。[提交检查提案](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=check-adapter.yml) · [贡献指南（英文）](CONTRIBUTING.md)
+我们收集的是实例：**哪里会出错、最早何时能发现、什么结果算通过**。只投稿人工检查步骤也可以。如果已有自动化版本，欢迎附上运行命令，以及哪些情况应该判为无法确定。
+
+| 层次 | 例子：保存的笔记消失 |
+| --- | --- |
+| 人能检查的行为 | 保存新笔记并刷新，确认原文仍在；同时确认编辑已有笔记仍然有效。 |
+| 最早能自动检查的地方 | 存储层或 API 就绪后，用另一个客户端读回刚写入的笔记并检查内容是否一致。无法连接存储时判为无法确定，而不是业务行为失败。 |
+
+[分享检查方法（无需代码）](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=early-check-recipe.yml) · [建议新的检查适配器](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=check-adapter.yml) · [贡献指南](CONTRIBUTING.md)
+
+优先沿用已有工具。仓库内置 Node.js 和 pytest 检查器，但分享检查方法不要求新增适配器。
 
 ## 可选的推理强度切换
 

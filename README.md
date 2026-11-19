@@ -1,10 +1,14 @@
 # Test Feedback Loop
 
-**Independent checks for fast, token-efficient implementation with smaller models.**
+**Build on Low. Catch mistakes while they’re still cheap to fix.**
 
-Once planning, design, and coordination have established the task, give the implementation agent a narrow, repeatable failure and the expected behavior. A short Check loop in Plan–Do–Check–Act gives a smaller model or a low-effort turn a concrete change to make. Independently rerun the failing case and a normal control to verify the result.
+Use your coding agent’s Low setting for small implementation steps and repairs. After each step, run the earliest check that can decide whether the behavior is right, separately from the agent’s own judgment. Feed back the evidence, not a request to “try harder.” If the check can’t decide, stop and find out why.
+
+Say your app claims it saved a note, but the note disappears on reload. You don’t need to wait for the whole screen: test save → read at the storage or API boundary, as soon as that code exists. Keep a working edit case as a control. Later, use a browser check for the parts only the screen can prove.
 
 [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · [Agent Skill](skills/test-feedback-loop/SKILL.md)
+
+**Building with AI, not writing tests?** [Describe the behavior and the earliest way to check it](#share-an-early-check-recipe). No code required. **Integrating a check?** [Try the demo](#try-the-complete-repair-loop) or [run it on your project](#check-your-own-project).
 
 ## Try the complete repair loop
 
@@ -69,11 +73,18 @@ An assertion failure in the test body produces evidence. Collection and setup fa
 
 To run the checker from other projects, run `npm link` in this checkout. Then run `tfl-check --help` from your project. For a Python test, use `tfl-check --runner pytest --python /path/to/venv/bin/python tests/test_regression.py`. The link also installs the optional proxy command `test-feedback-loop`.
 
-## Share an independent check
+## Share an early-check recipe
 
-Have a useful pytest, Vitest, TypeScript, Cargo, schema, or other check? Open a [check proposal](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=check-adapter.yml) with a small failing example, a passing recheck, and a case where the runner could not determine the result. Proposals are welcome before implementation. If you have a working adapter, open a pull request with those examples as tests. [Contribution guide](CONTRIBUTING.md)
+A recipe tells others **what can go wrong, when it can first be detected, and what counts as pass or fail**. The human-readable version is enough to contribute. If you have a repeatable automated version, add the runner, command, and what should be reported as inconclusive.
 
-Bundled checkers support Node.js tests and pytest.
+| Layer | Example: a saved note disappears |
+| --- | --- |
+| Behavior, no code needed | Create a note, save it, then reload. The saved text must still be there. Editing an existing note must still work. |
+| First machine-checkable point | When the storage or API boundary exists, write a note and read it back using a fresh client. Assert the exact saved value. Add a separate UI check when the screen exists. If the runner cannot reach storage, report inconclusive, not a failed behavior check. |
+
+[Share a recipe (no code required)](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=early-check-recipe.yml) · [Propose a runner adapter](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=check-adapter.yml) · [Contribution guide](CONTRIBUTING.md)
+
+Use existing tools first. Node.js and pytest checkers are bundled; a recipe can use another existing tool without adding a new adapter.
 
 ## Optional effort switching
 
