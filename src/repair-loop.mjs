@@ -19,6 +19,13 @@ const questions = {
   no_change: 'What prevented a code change, and does the task need a decision before another attempt?',
 };
 
+const operationalErrors = {
+  initial_check: 'The initial check callback failed.',
+  repair: 'The repair callback failed.',
+  recheck: 'The recheck callback failed.',
+  read_diff: 'The diff reader callback failed.',
+};
+
 /** The caller supplies a trusted check, a repair session, and a project diff reader. */
 export async function runRepairLoop({ check, repair, readDiff, maxRepairs = 2, diagnose }) {
   if (!Number.isSafeInteger(maxRepairs) || maxRepairs < 1) {
@@ -27,16 +34,19 @@ export async function runRepairLoop({ check, repair, readDiff, maxRepairs = 2, d
   if (diagnose !== undefined && typeof diagnose !== 'function') {
     throw new TypeError('diagnose must be a function');
   }
+  for (const [name, callback] of Object.entries({ check, repair, readDiff })) {
+    if (typeof callback !== 'function') throw new TypeError(`${name} must be a function`);
+  }
   const attempts = [];
   let diagnosis;
-  const initial = await check({ id: 'before' });
-  let latest = initial;
-  let diff = await readDiff();
+  let initial;
+  let latest;
+  let diff;
 
-  function result(status) {
+  function result(status, stage) {
     const run = { status, initial, attempts, latest, ...(diagnosis && { diagnosis }) };
     if (status === 'passed' || status === 'already_passed') return run;
-    const question = latest.reason === 'regression_test_changed'
+    const question = latest?.reason === 'regression_test_changed'
       ? 'Can the original independent check be restored before resuming?'
       : (status === 'diagnosis_unknown' || status === 'diagnosis_needs_decision'
         ? diagnosis.next : questions[status]);
@@ -45,8 +55,23 @@ export async function runRepairLoop({ check, repair, readDiff, maxRepairs = 2, d
       : stopSummary[status];
     return {
       ...run,
-      consultation: { reason: status, summary, question, latest, diff, attempts },
+      consultation: {
+        reason: status, summary, question, latest, diff, attempts,
+        ...(stage && { stage, error: operationalErrors[stage] }),
+      },
     };
+  }
+
+  try {
+    initial = await check({ id: 'before' });
+  } catch {
+    return result('unknown', 'initial_check');
+  }
+  latest = initial;
+  try {
+    diff = await readDiff();
+  } catch {
+    return result('unknown', 'read_diff');
   }
 
   if (initial.observation.outcome === 'success') return result('already_passed');
@@ -60,22 +85,33 @@ export async function runRepairLoop({ check, repair, readDiff, maxRepairs = 2, d
     try {
       usage = await repair(problem);
     } catch {
-      diff = await readDiff();
       attempts.push({ number, interrupted: true });
-      return result('repair_interrupted');
+      try {
+        diff = await readDiff();
+      } catch {
+        // Keep the last known diff; the repair failure is primary.
+      }
+      return result('repair_interrupted', 'repair');
     }
-    const changed = await readDiff();
+    const previousDiff = diff;
+    try {
+      diff = await readDiff();
+    } catch {
+      attempts.push({ number, usage });
+      return result('unknown', 'read_diff');
+    }
     const previousFailure = latest.observation.id;
-    latest = await check({ id: `after-${number}`, resolves: previousFailure });
+    try {
+      latest = await check({ id: `after-${number}`, resolves: previousFailure });
+    } catch {
+      attempts.push({ number, usage });
+      return result('unknown', 'recheck');
+    }
     attempts.push({ number, usage, ...latest });
 
     if (latest.observation.outcome === 'success') return result('passed');
-    if (latest.observation.outcome !== 'failure') {
-      diff = changed;
-      return result('unknown');
-    }
-    const hasChange = changed !== diff;
-    diff = changed;
+    if (latest.observation.outcome !== 'failure') return result('unknown');
+    const hasChange = diff !== previousDiff;
     if (diagnose && number === maxRepairs) {
       let decision;
       try {
@@ -87,7 +123,7 @@ export async function runRepairLoop({ check, repair, readDiff, maxRepairs = 2, d
       try {
         afterDiagnosis = await readDiff();
       } catch {
-        return result('diagnosis_diff_unavailable');
+        return result('diagnosis_diff_unavailable', 'read_diff');
       }
       if (afterDiagnosis !== diff) {
         diff = afterDiagnosis;
