@@ -164,3 +164,30 @@ test('operational failures keep their stage and the evidence already collected',
     if (scenario === 'read_diff') assert.equal(edits, 0);
   }
 });
+
+test('an independently pinned check definition must survive the recheck', async () => {
+  for (const scenario of ['unchanged', 'changed', 'unavailable']) {
+    let edits = 0;
+    const result = await runRepairLoop({
+      check: async ({ id, resolves }) => ({
+        observation: { id, check_id: 'acceptance', outcome: edits ? 'success' : 'failure', resolves },
+        evidence: edits ? [] : ['baseline failure'],
+      }),
+      repair: async () => { edits++; },
+      readDiff: async () => String(edits),
+      readCheckIdentity: async () => {
+        if (edits && scenario === 'unavailable') throw new Error('fixture unavailable');
+        return edits && scenario === 'changed' ? 'different acceptance' : 'original acceptance';
+      },
+    });
+    assert.equal(edits, 1);
+    if (scenario === 'unchanged') {
+      assert.equal(result.status, 'passed');
+    } else {
+      assert.ok(result.consultation, scenario);
+      assert.match(result.consultation.reason, /check.*(changed|unavailable)/);
+      assert.notEqual(result.status, 'passed');
+      assert.notEqual(result.status, 'already_passed');
+    }
+  }
+});
