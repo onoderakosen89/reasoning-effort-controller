@@ -6,6 +6,8 @@ const stopSummary = {
   diagnosis_interrupted: 'The diagnosis did not return a usable result.',
   diagnosis_diff_unavailable: 'The project diff could not be checked after diagnosis.',
   diagnosis_changed_diff: 'The project diff changed during the read-only diagnosis.',
+  check_identity_changed: 'The independent check definition changed during the run.',
+  check_identity_unavailable: 'The independent check definition could not be verified.',
   no_change: 'The last repair left the project diff unchanged and the check still failed.',
 };
 
@@ -16,6 +18,8 @@ const questions = {
   diagnosis_interrupted: 'Can the diagnosis be run again with the same evidence?',
   diagnosis_diff_unavailable: 'Can the current project diff be read before retrying?',
   diagnosis_changed_diff: 'What changed during diagnosis, and can the original diff be restored?',
+  check_identity_changed: 'Can the original check definition be restored? If the acceptance criteria changed, start a new run.',
+  check_identity_unavailable: 'Can the trusted check identity reader verify the original definition?',
   no_change: 'What prevented a code change, and does the task need a decision before another attempt?',
 };
 
@@ -26,13 +30,24 @@ const operationalErrors = {
   read_diff: 'The diff reader callback failed.',
 };
 
-/** The caller supplies a trusted check, a repair session, and a project diff reader. */
-export async function runRepairLoop({ check, repair, readDiff, maxRepairs = 2, diagnose }) {
+/**
+ * The caller supplies a trusted check, a repair session, and a project diff reader.
+ * Optional `readCheckIdentity()` returns a stable, nonempty string (or a promise
+ * for one) identifying the caller-selected tests, configuration, fixtures, and
+ * controls. The caller must keep the reader and its definition of identity
+ * outside the repair session's control. The guard compares identities around
+ * checks; it does not detect changes that are reverted between reads. A real
+ * change to the acceptance definition requires a new run.
+ */
+export async function runRepairLoop({ check, repair, readDiff, maxRepairs = 2, diagnose, readCheckIdentity }) {
   if (!Number.isSafeInteger(maxRepairs) || maxRepairs < 1) {
     throw new RangeError('maxRepairs must be a positive safe integer');
   }
   if (diagnose !== undefined && typeof diagnose !== 'function') {
     throw new TypeError('diagnose must be a function');
+  }
+  if (readCheckIdentity !== undefined && typeof readCheckIdentity !== 'function') {
+    throw new TypeError('readCheckIdentity must be a function');
   }
   for (const [name, callback] of Object.entries({ check, repair, readDiff })) {
     if (typeof callback !== 'function') throw new TypeError(`${name} must be a function`);
@@ -62,11 +77,36 @@ export async function runRepairLoop({ check, repair, readDiff, maxRepairs = 2, d
     };
   }
 
-  try {
-    initial = await check({ id: 'before' });
-  } catch {
-    return result('unknown', 'initial_check');
+  async function readIdentity() {
+    try {
+      const identity = await readCheckIdentity();
+      if (typeof identity === 'string' && identity.trim()) return identity;
+    } catch {
+      // A failed read cannot establish that the definition is unchanged.
+    }
   }
+
+  const pinnedIdentity = readCheckIdentity && await readIdentity();
+  if (readCheckIdentity && pinnedIdentity === undefined) return result('check_identity_unavailable');
+
+  async function identityStop() {
+    const identity = await readIdentity();
+    if (identity === undefined) return 'check_identity_unavailable';
+    if (identity !== pinnedIdentity) return 'check_identity_changed';
+  }
+
+  let baseline;
+  let baselineFailed = false;
+  try {
+    baseline = await check({ id: 'before' });
+  } catch {
+    baselineFailed = true;
+  }
+  const baselineStop = readCheckIdentity && await identityStop();
+  if (baselineStop || baselineFailed) {
+    return result(baselineStop || 'unknown', baselineFailed ? 'initial_check' : undefined);
+  }
+  initial = baseline;
   latest = initial;
   try {
     diff = await readDiff();
@@ -101,12 +141,24 @@ export async function runRepairLoop({ check, repair, readDiff, maxRepairs = 2, d
       return result('unknown', 'read_diff');
     }
     const previousFailure = latest.observation.id;
-    try {
-      latest = await check({ id: `after-${number}`, resolves: previousFailure });
-    } catch {
+    const beforeStop = readCheckIdentity && await identityStop();
+    if (beforeStop) {
       attempts.push({ number, usage });
-      return result('unknown', 'recheck');
+      return result(beforeStop);
     }
+    let recheck;
+    let recheckFailed = false;
+    try {
+      recheck = await check({ id: `after-${number}`, resolves: previousFailure });
+    } catch {
+      recheckFailed = true;
+    }
+    const afterStop = readCheckIdentity && await identityStop();
+    if (afterStop || recheckFailed) {
+      attempts.push({ number, usage });
+      return result(afterStop || 'unknown', recheckFailed ? 'recheck' : undefined);
+    }
+    latest = recheck;
     attempts.push({ number, usage, ...latest });
 
     if (latest.observation.outcome === 'success') return result('passed');
