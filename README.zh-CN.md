@@ -51,6 +51,8 @@ npm run --silent demo:repair -- --show-stop
 npm run check:node -- --cwd /path/to/project --check-id regression --id before test/regression.test.mjs
 ```
 
+若要在运行 Node 测试前检查指定源码的语法，可对每个文件指定一次 `--syntax FILE`。例如 `tfl-check --syntax src/app.mjs test/regression.test.mjs`。确认语法错误时，检查返回失败，并尽可能报告源码位置。源码缺失或解析结果无法确定时，检查返回未知。
+
 输出首先显示判定，然后在可用时给出失败的断言和位置。修复后，使用同一批测试文件和同一个检查 ID，并加上 `--id after --resolves before`。
 
 | 退出码 | 含义 |
