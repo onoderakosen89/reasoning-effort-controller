@@ -132,21 +132,27 @@ test('operational failures keep their stage and the evidence already collected',
     let edits = 0;
     let reads = 0;
     const unavailable = new Error('fixture-private-raw-error');
-    const result = await runRepairLoop({
-      check: async ({ id }) => {
-        if (scenario === 'initial_check' || (scenario === 'recheck' && edits)) throw unavailable;
-        return { observation: { id, outcome: 'failure' }, evidence: ['recorded assertion'] };
-      },
-      repair: async () => {
-        edits++;
-        if (scenario === 'repair_and_diff') throw unavailable;
-      },
-      readDiff: async () => {
-        reads++;
-        if (scenario === 'read_diff' || (scenario === 'repair_and_diff' && reads > 1)) throw unavailable;
-        return edits ? 'changed' : 'known baseline';
-      },
-    });
+    let result;
+    try {
+      result = await runRepairLoop({
+        check: async ({ id }) => {
+          if (scenario === 'initial_check' || (scenario === 'recheck' && edits)) throw unavailable;
+          return { observation: { id, outcome: 'failure' }, evidence: ['recorded assertion'] };
+        },
+        repair: async () => {
+          edits++;
+          if (scenario === 'repair_and_diff') throw unavailable;
+        },
+        readDiff: async () => {
+          reads++;
+          if (scenario === 'read_diff' || (scenario === 'repair_and_diff' && reads > 1)) throw unavailable;
+          return edits ? 'changed' : 'known baseline';
+        },
+      });
+    } catch (error) {
+      if (error !== unavailable) throw error;
+      assert.fail(`${scenario}: the known callback rejection escaped instead of returning consultation`);
+    }
     assert.ok(result.consultation, scenario);
     assert.equal(result.consultation.stage, scenario === 'repair_and_diff' ? 'repair' : scenario);
     assert.ok(!JSON.stringify(result).includes(unavailable.message), scenario);
