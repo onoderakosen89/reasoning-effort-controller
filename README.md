@@ -51,6 +51,8 @@ Run the check command directly on your own tests. To hand failures to a repair a
 npm run check:node -- --cwd /path/to/project --check-id regression --id before test/regression.test.mjs
 ```
 
+To check selected source files for parser errors before running the Node tests, repeat `--syntax FILE` for each file. For example, run `tfl-check --syntax src/app.mjs test/regression.test.mjs`. A confirmed parser error reports the source location when available and returns a failed check. A missing source file or an inconclusive parser run returns an unknown result.
+
 The output leads with the check result, followed by the failing assertion and its location if available. After a repair, use the same files and check ID, plus `--id after --resolves before`.
 
 | Exit code | Meaning |

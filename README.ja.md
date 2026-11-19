@@ -51,6 +51,8 @@ npm run --silent demo:repair -- --show-stop
 npm run check:node -- --cwd /path/to/project --check-id regression --id before test/regression.test.mjs
 ```
 
+Node のテストより前にソースの構文を確認するには、対象ごとに `--syntax FILE` を指定します。例は `tfl-check --syntax src/app.mjs test/regression.test.mjs` です。構文エラーを確認できた場合は、分かる範囲でソースの位置を添えて失敗を返します。対象ファイルが見つからない場合や構文検査の結果を確定できない場合は未確認を返します。
+
 結果、失敗したアサーションの場所、分かる範囲で未確認の理由が出ます。修正後は同じファイル・検査IDで `--id after --resolves before` を付けて実行します。モデルや API キーは不要です。台本から使う場合は `npm run --silent check:node -- --json` に検査の引数を足し、返る `observation` を `RunContext` に渡せます。
 
 | 終了値 | 意味 |
