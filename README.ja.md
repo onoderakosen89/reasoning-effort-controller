@@ -28,6 +28,8 @@ npm run --silent demo:repair -- --show-stop
 
 モデルを呼ばずに見直しの流れを試すには `npm run --silent demo:repair -- --show-diagnosis` を実行します。組み込む際は `diagnose` を渡します。既定では2回の修正後に検査が落ちると、最新の検査、修正の経過、差分が `effort: "high"` とともに渡ります。見直しは読み取り専用で実行し、空でない文字列を持つ `{ action, cause, evidence, next }` を返します。現行仕様内で具体的に直せるなら `repair`、原因が不明なら `unknown`、仕様変更など判断が要るなら `human_decision` を返します。`repair` の場合だけ Low で1回修正し、同じ独立検査で確かめます。モデルの推論設定と読み取り専用の隔離は呼び出し側が適用します。
 
+[保存と再読込の例](examples/save-and-reload/README.md)では、「保存済み」と表示され、保存部品の検査が通っても、再読込で消える問題を確かめられます。
+
 ## 検査から始める作り方
 
 1. **再現する。** 何が通ればよいかを決め、異常例と正常例を一つずつ試します。

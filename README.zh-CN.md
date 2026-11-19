@@ -28,6 +28,8 @@ npm run --silent demo:repair -- --show-stop
 
 运行 `npm run --silent demo:repair -- --show-diagnosis` 可在不调用模型的情况下试用诊断流程。接入时提供 `diagnose` 回调。默认两次修复后检查仍失败，回调将收到最新检查结果、修复记录、差异和 `effort: "high"`。请以只读方式运行诊断，返回各字段均为非空字符串的 `{ action, cause, evidence, next }`。有证据支持在现有需求内修复时返回 `repair`，原因不明确时返回 `unknown`，需要人工决定时返回 `human_decision`。只有 `repair` 会触发一次 Low 修复，然后重新运行相同的独立检查。调用方负责设置模型推理强度和只读隔离。
 
+[保存并重新加载示例](examples/save-and-reload/README.md)演示了为何“已保存”提示和存储检查通过时，重新加载仍可能丢失内容。
+
 ## 工作流程
 
 1. **复现问题。** 用一个小测试锁定预期行为，同时保留正常对照用例。
