@@ -35,3 +35,7 @@ jobs:
           npm run --silent demo:repair -- --show-stop > "$result" || status=$?
           test "$status" -eq 1
           jq -e '.status == "repair_limit" and (.consultation.attempts | length) == 2' "$result"
+      - name: Verify the diagnosis path
+        run: |
+          npm run --silent demo:repair -- --show-diagnosis > diagnosis.json
+          jq -e '.status == "passed" and .diagnosis.action == "repair" and [.attempts[].number] == [1, 2, 3]' diagnosis.json

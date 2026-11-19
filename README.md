@@ -26,6 +26,8 @@ This exits with code 1 and returns a `consultation` object with both attempts, t
 
 Run `npm run --silent demo:repair -- --chatgpt` to have Codex apply the fix at fixed Low using your ChatGPT sign-in. The demo uses a disposable checkout-free fixture. A follow-up appends only the new check result to the same Codex session. Reported usage includes cached input when Codex supplies it. The [runRepairLoop API](src/repair-loop.mjs) defaults to two repair attempts. Callers can set `maxRepairs` to a positive integer.
 
+To try the diagnosis path without model calls, run `npm run --silent demo:repair -- --show-diagnosis`. Pass a `diagnose` callback to enable this path in your integration. After two failed repairs by default, it receives the latest check, attempts, and diff with `effort: "high"`. Run it with read-only access. Return `{ action, cause, evidence, next }` with nonempty strings. Use `repair` when the evidence supports a concrete change within the current requirements, `unknown` when the cause is unclear, or `human_decision` when approval is needed. Only `repair` permits one more repair at `effort: "low"`, followed by the same independent check. The caller sets the model effort and provides read-only isolation.
+
 ## The workflow
 
 1. **Reproduce.** Run a small check against the behavior you expect, with a normal case to check for regressions.
