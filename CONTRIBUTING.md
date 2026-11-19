@@ -1,6 +1,12 @@
-# Contribute an independent check
+# Contribute to Test Feedback Loop
 
-Share checks that catch a specific broken behavior and can verify the repair with the same input. A small reproducible example is enough to start a discussion.
+## Share an early-check recipe
+
+[Open a recipe issue](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=early-check-recipe.yml). No test code or new tool is required. Describe the wrong behavior, the earliest point it could be checked, and what you would observe on pass or fail. If you don't know where to automate it, share what you can reproduce by hand.
+
+For a machine-checkable version, use an existing tool where possible. Include the command or check, a failing example, a known-good control, and what makes the check inconclusive. Use synthetic data; don't include private logs, credentials, or customer information.
+
+## Add a runner adapter
 
 1. [Propose a check](https://github.com/onoderakosen89/test-feedback-loop/issues/new?template=check-adapter.yml). Show the runner and how it reports an assertion failure, a pass, and an incomplete or ambiguous run.
 2. For an adapter PR, keep execution and classification on the caller side. Follow the [observation contract](SPEC.md) and use the existing [Node.js adapter](src/checkers/node-test.mjs) as a reference.
