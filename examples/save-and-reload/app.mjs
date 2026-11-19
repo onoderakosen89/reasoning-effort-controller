@@ -22,7 +22,7 @@ function escapeHtml(value) {
 
 export function createApp({ directory, simulateBadWiring = false }) {
   const readable = join(directory, 'note.txt');
-  const writable = join(directory, 'draft.txt');
+  const writable = simulateBadWiring ? join(directory, 'draft.txt') : readable;
   return createServer(async (request, response) => {
     try {
       if (request.url !== '/' || !['GET', 'POST'].includes(request.method)) {

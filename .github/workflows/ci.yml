@@ -39,3 +39,16 @@ jobs:
         run: |
           npm run --silent demo:repair -- --show-diagnosis > diagnosis.json
           jq -e '.status == "passed" and .diagnosis.action == "repair" and [.attempts[].number] == [1, 2, 3]' diagnosis.json
+      - name: Verify the save-and-reload example
+        run: |
+          workflow=examples/save-and-reload/workflow.test.mjs
+          npm run --silent check:node -- --id storage examples/save-and-reload/storage.test.mjs
+          status=0
+          TFL_DEMO_MISWIRED=1 npm run --silent check:node -- --json --id before "$workflow" > before.json || status=$?
+          test "$status" -eq 1
+          jq -e '.observation.outcome == "failure" and (.evidence | length) == 2' before.json
+          npm run --silent check:node -- --json --id after --resolves before "$workflow" | jq -e '.observation.outcome == "success" and .observation.resolves == "before"'
+          status=0
+          npm run --silent check:node -- --json --id unavailable examples/save-and-reload/missing.test.mjs > unavailable.json || status=$?
+          test "$status" -eq 2
+          jq -e '.observation.outcome == "unknown"' unavailable.json
