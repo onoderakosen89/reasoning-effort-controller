@@ -11,9 +11,12 @@ import { runRepairLoop } from '../src/repair-loop.mjs';
 const { values } = parseArgs({ options: {
   chatgpt: { type: 'boolean' },
   'show-stop': { type: 'boolean' },
+  'show-diagnosis': { type: 'boolean' },
   model: { type: 'string', default: 'gpt-6.2-sol' },
 } });
-if (values.chatgpt && values['show-stop']) throw new Error('Choose the live repair or the scripted stop.');
+if ([values.chatgpt, values['show-stop'], values['show-diagnosis']].filter(Boolean).length > 1) {
+  throw new Error('Choose one demo mode.');
+}
 
 const workspace = await mkdtemp(join(tmpdir(), 'test-feedback-repair-'));
 const implementation = join(workspace, 'answer.mjs');
@@ -100,7 +103,8 @@ try {
   };
   const repair = values.chatgpt ? repairWithCodex : async ({ attempt, evidence }) => {
     if (!evidence.length) throw new Error('The repair requires assertion evidence');
-    const answer = values['show-stop'] ? 42 + attempt : 42;
+    const simulateMiss = values['show-stop'] || (values['show-diagnosis'] && attempt <= 2);
+    const answer = simulateMiss ? 42 + attempt : 42;
     await writeFile(implementation, `export const answer = () => ${answer};\n`);
   };
   const readDiff = async () => {
@@ -110,7 +114,13 @@ try {
       ...original.trimEnd().split('\n').map(line => `-${line}`),
       ...(current === null ? [] : current.trimEnd().split('\n').map(line => `+${line}`))].join('\n');
   };
-  const result = await runRepairLoop({ check, repair, readDiff });
+  const diagnose = values['show-diagnosis'] ? async ({ latest }) => ({
+    action: 'repair',
+    cause: 'answer.mjs returns the wrong constant.',
+    evidence: latest.evidence.map(item => item.message).join('\n'),
+    next: 'Return 42 as required by the original regression test.',
+  }) : undefined;
+  const result = await runRepairLoop({ check, repair, readDiff, diagnose });
   console.log(JSON.stringify(result, null, 2));
   if (result.consultation) process.exitCode = result.status === 'unknown' ? 2 : 1;
 } finally {
