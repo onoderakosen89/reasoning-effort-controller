@@ -1,0 +1,29 @@
+name: Share an early-check recipe
+description: Show how to catch a mistake earlier. No test code required.
+title: "[Early check] "
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What went wrong?
+      description: Explain what you did and what happened. Use synthetic examples and do not include secrets or private data.
+      placeholder: "I saved a new note, then reloaded the page. The note was gone."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What would count as passing?
+      description: Describe what should happen and, if you know, one normal case that should still work.
+    validations:
+      required: true
+  - type: textarea
+    id: early_point
+    attributes:
+      label: When could we first catch it?
+      description: For example, while writing the save function, before the screen exists. It is fine to leave this blank if you are not sure.
+  - type: textarea
+    id: automated_check
+    attributes:
+      label: Can a machine check it? (optional)
+      description: If available, include a trusted runner or command and what makes its result inconclusive rather than a pass or fail.
